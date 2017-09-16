@@ -39,6 +39,7 @@ using namespace ATE;
 extern ImportSuite gPostStartupSuites[];
 
 SnippetRunnerPlugin*	gPlugin = NULL;
+std::map<string, map<string, AIArtHandle>>	textFrames;
 
 /*
 */
@@ -153,7 +154,7 @@ ASErr SnippetRunnerPlugin::UpdateMenuItem( AIMenuMessage *message )
 	if ( fSnippetRunnerPanelController != NULL )
 		fSnippetRunnerPanelController->IsPrimaryStageVisible(visible);
 	
-	sAIMenu->CheckItem(fShowHidePanelMenu, visible);
+	// sAIMenu->CheckItem(fShowHidePanelMenu, visible);
 
 	return kNoErr;
 }
@@ -284,13 +285,13 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 		ASErr result = kNoErr;
 		try
 		{
-			std::map <string, AIRealPoint> columnLeftCoords;
-			std::map <string, AIRealPoint> rowTopCoords;
+			
+			std::map <string, AIReal> hColHeaders;
+			std::map <string, AIReal> vRowHeaders;
 
 			AIArtHandle artGroup = NULL;
 			result = sAIArt->GetFirstArtOfLayer(NULL, &artGroup);
 
-			ITextRanges iTextRanges;
 			SDK_ASSERT(sAITextFrame);
 			SnippetRunnerLog* log = SnippetRunnerLog::Instance();
 			AIArtSpec specs[1] = { { kTextFrameArt,0,0 } };
@@ -304,13 +305,12 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 					result = sAITextFrame->GetATETextFrame(textFrameArt, &textFrameRef);
 					aisdk::check_ai_error(result);
 					ITextFrame textFrame(textFrameRef);
-					// log->WritePrintf("Text frame %d", i);
+
 					SnippetRunnerLog::Indent indent;
 					ITextRange textRange = textFrame.GetTextRange();
-					iTextRanges.Add(textRange);
+
 					ai::AutoBuffer<ASUnicode> contents(textRange.GetSize());
 					textRange.GetContents(contents, textRange.GetSize());
-					// log->Write(ai::UnicodeString(contents, contents.GetCount()));
 					// sAIUser->MessageAlert(ai::UnicodeString(contents));
 					ASInt32 strLength = textRange.GetSize();
 					if (strLength > 0)
@@ -335,16 +335,6 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 								error = sAITextFrame->GetAITextFrame(textFrameRef, &frameArt);
 								// aisdk::check_ai_error(result);
 
-								AIRealRect frameBounds = { 0, 0, 0, 0 };
-								error = sAIArt->GetArtBounds(frameArt, &frameBounds);
-								// aisdk::check_ai_error(result);
-
-								AIReal height = frameBounds.top - frameBounds.bottom;
-								AIRealRect rect = frameBounds; // { 0, 0, 0, 0 };
-								// rect.top = frameBounds.top - (height + 10);
-								// rect.bottom = frameBounds.bottom - (height + 10);
-								// rect.left = frameBounds.left;
-								// rect.right = frameBounds.right;
 
 								AIRealPoint anchor;
 								result = sAITextFrame->GetPointTextAnchor(textFrameArt, &anchor);
@@ -354,14 +344,14 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 									|| contents == "Comments:" || contents == "Approved:"
 									|| contents == "Rejected:" || contents == "Date:")
 								{
-									columnLeftCoords[contents] = anchor;
+									hColHeaders[contents] = anchor.v;
 								}
 
 								if (contents == "Brand" || contents == "Marketing"
 									|| contents == "Engineer " || contents == "Integrity "
 									|| contents == "PI" || contents == "Legal")
 								{
-									rowTopCoords[contents] = anchor;
+									vRowHeaders[contents] = anchor.h;
 								}
 								
 								
@@ -371,24 +361,19 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 
 				}
 
-				// map<string, AIRealRect>::iterator row;
-				map<string, AIRealPoint>::iterator row;
+				map<string, AIReal>::iterator row;
 
-				for (row = rowTopCoords.begin(); row != rowTopCoords.end(); row++)
+				for (row = vRowHeaders.begin(); row != vRowHeaders.end(); row++)
 				{
 					std::string rowIndex = row->first;
-					// AIRealRect rowRectTop = row->second;
-					AIRealPoint rowAnchor = row->second;
-					int rowTop = rowAnchor.v; // rowRectTop.top;
-					// map<string, AIRealRect>::iterator col;
-					map<string, AIRealPoint>::iterator col;
-					for (col = columnLeftCoords.begin(); col != columnLeftCoords.end(); col++)
+					AIReal rowTop = row->second; // rowRectTop.top;
+					map<string, AIReal>::iterator col;
+
+					map<string, AIArtHandle> innerTextRange;
+					for (col = hColHeaders.begin(); col != hColHeaders.end(); col++)
 					{
 						std::string colIndex = col->first;
-						// AIRealRect colRectLeft = col->second;
-						AIRealPoint colAnchor = col->second;
-						int colLeft = colAnchor.h; //  colRectLeft.left;
-
+						AIReal colLeft = col->second;
 						
 
 						AIArtHandle newFrame;
@@ -401,12 +386,27 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 
 						// Add the new point text item to the layer.
 						AITextOrientation orient = kHorizontalTextOrientation;
-						AIRealPoint anchor = {};
-						anchor.h = colLeft;
-						anchor.v = rowTop;
+						AIRealPoint newAnchor = {};
+						newAnchor.v = colLeft;
+						newAnchor.h = rowTop;
 						AIArtHandle textFrame = NULL;
-						result = sAITextFrame->NewPointText(kPlaceAboveAll, artGroup, orient, anchor, &textFrame);
+						result = sAITextFrame->NewPointText(kPlaceAboveAll, artGroup, orient, newAnchor, &textFrame);
 						aisdk::check_ai_error(result);
+
+
+						//The matrix for the position and rotation of the point text object. 
+						//The AIRealMathSuite and the AITransformArtSuite are used. 
+						AIRealMatrix matrix;
+						AIReal RotationAngle = kAIRealPi2;
+						
+						//Then concat a translation to the matrix. 
+						// sAIRealMath->AIRealMatrixSetTranslate(&matrix, newAnchor.h, newAnchor.v);
+						//Set the rotation matrix. 
+						sAIRealMath->AIRealMatrixSetRotate(&matrix, RotationAngle);
+						sAIRealMath->AIRealMatrixInvert(&matrix);
+						//Apply the matrix to the point text object. 
+						// error = sAITransformArt->TransformArt(textFrame, &matrix, 0, kTransformObjects);
+
 
 						// Set the contents of the text range.
 						TextRangeRef range = NULL;
@@ -414,7 +414,12 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						aisdk::check_ai_error(result);
 						ITextRange crange(range);
 						crange.InsertAfter(ai::UnicodeString("Text").as_ASUnicode().c_str());
+
+						innerTextRange[colIndex] = textFrame;
+						
+
 					}
+					textFrames[rowIndex] = innerTextRange;
 				}
 
 			}
@@ -438,7 +443,45 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 	}
 	else if (strcmp(message->type, kAIDocumentSavedNotifier) == 0)
 	{
+		// To Curtis Mimes: Here's where the Save event is triggered.
+		ASErr result = kNoErr;
 		int documentSaved = 1;
+		map<string, map<string, AIArtHandle>>::iterator outerTextRangeIterator;
+		for (outerTextRangeIterator = textFrames.begin(); outerTextRangeIterator != textFrames.end(); outerTextRangeIterator++)
+		{
+			std::string rowIndex = outerTextRangeIterator->first;
+			map<string, AIArtHandle> outerTextRange = outerTextRangeIterator->second; // rowRectTop.top;
+			map<string, AIArtHandle>::iterator innerTextRangeIterator;
+			for (innerTextRangeIterator = outerTextRange.begin(); innerTextRangeIterator != outerTextRange.end(); innerTextRangeIterator++)
+			{
+				std::string colIndex = innerTextRangeIterator->first;
+				AIArtHandle textFrame = innerTextRangeIterator->second;
+
+				TextRangeRef range = NULL;
+				result = sAITextFrame->GetATETextRange(textFrame, &range);
+				aisdk::check_ai_error(result);
+				ITextRange textRange(range);
+
+
+				ai::AutoBuffer<ASUnicode> contents(textRange.GetSize());
+				textRange.GetContents(contents, textRange.GetSize());
+				// sAIUser->MessageAlert(ai::UnicodeString(contents));
+				ASInt32 strLength = textRange.GetSize();
+				if (strLength > 0)
+				{
+					std::vector<char> vc(strLength);
+					ASInt32 conLength = textRange.GetContents(&vc[0], strLength);
+					if (conLength == strLength)
+					{
+						std::string contents;
+						contents.assign(vc.begin(), vc.begin() + strLength);
+						// To Curtis Mimes: And Here's where the modified text field content gets displayed (the contents variable).
+						sAIUser->MessageAlert(ai::UnicodeString(contents));
+					}
+				}
+
+			}
+		}
 	}
 	else if (strcmp(message->type, kAIDocumentNewNotifier) == 0)
 	{
