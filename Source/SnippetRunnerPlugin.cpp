@@ -34,6 +34,8 @@
 #include "SnpArtSetHelper.h"
 #include "SnpArtHelper.h"
 
+#include "tinyxml2.h"
+
 using namespace ATE;
 
 extern ImportSuite gPostStartupSuites[];
@@ -280,14 +282,158 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 
 	if (strcmp(message->type, kAIDocumentOpenedNotifier) == 0)
 	{
+
+
+		/*
+			1.	DEFINE ALL ROW AND COLUMN HEADER NAMES BASED UPON VARIABLE NAMES
+			
+			headerInfoByVariables = {
+				'varname1': ['Brand', 'Signature:']
+				'varname2': ['Brand'], 'Approved:'],
+			}
+			2.	WHEN ITERATING THROUGH THE XML
+				i.	CREATE A NEW ARRAY BY FLIPPLING THE ABOVE ARRAY 
+				variableNamesByHeaders = {
+					'Brand': {
+						'Signature': ["varname1", "varval1"],
+						'Approved': "varname2", "varval2"]
+					}
+					''
+				}
+				ii.	Create row header strings
+				iii.	Create col header strings
+		*/
+		map<string, TitleBlockHeaderInfo> headerInfoByVariables;
+		headerInfoByVariables["BrandManagerApproval"] = { "Brand", "Signature:" };
+		headerInfoByVariables["BrandManagerAppDate"] = { "Brand", "Date:" };
+		headerInfoByVariables["MarketingDirApproval"] = { "Marketing", "Signature:" };
+		headerInfoByVariables["MarketingDirAppDate"] = { "Marketing", "Date:" };
+		headerInfoByVariables["ProductEngineerApproval"] = { "Engineer ", "Signature:" };
+		headerInfoByVariables["ProductEngineerAppDate"] = { "Engineer ", "Date:" };
+		headerInfoByVariables["EngineeringDirApproval"] = { "Engineering ", "Signature:" };
+		headerInfoByVariables["EngineeringDirAppDate"] = { "Engineering ", "Date:" };
+		
+		headerInfoByVariables["ProductIntegrityApproval"] = { "Integrity ", "Signature:" };
+		headerInfoByVariables["ProductIntegrityAppDate"] = { "Integrity ", "Date:" };
+
+		headerInfoByVariables["QADirApproval"] = { "Quality ", "Signature:" };
+		headerInfoByVariables["QADirAppDate"] = { "Quality ", "Date:" };
+
+		headerInfoByVariables["LegalApproval"] = { "Legal ", "Signature:" };
+		headerInfoByVariables["LegalAppDate"] = { "Legal ", "Date:" };
+		
+
+		map < string, map<string, string>> variableValuesByHeaders;
+		std::map <string, AIReal> hColHeaders;
+		std::map <string, AIReal> vRowHeaders;
 		int documentOpened = 1;
 		// sAIUser->MessageAlert(ai::UnicodeString("A document was just opened!"));
 		ASErr result = kNoErr;
 		try
 		{
+			//	Fill these up with the required values above.
+			static const char* xml =
+				"<success>true</success>"
+				"<debug>Filepath passed = C:\dev\desktopDev\lampros\evenfloPdm\aiFileSamples\Balance + _WideNeck_Eng_9oz_1pk_CTN_3049 - 423_10AUG2016_OUTLINES.ai&#x0A; No smart handler available.trying packet scanning.&#x0A; &#x0A; CreatorTool = Adobe Illustrator CS6(Windows)&#x0A; terminated successfully after reading values&#x0A; </debug>"
+				"<message></message>"
+				"<pdm_variable_list>"
+					"<pdm_variable>"
+						"<variable_name>BrandManagerApproval</variable_name>"
+						"<variable_value>Brand Manager Name</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>BrandManagerAppDate</variable_name>"
+						"<variable_value>Jul 12th, 2017</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>MarketingDirApproval</variable_name>"
+						"<variable_value>Marteking Director Name</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>MarketingDirAppDate</variable_name>"
+						"<variable_value>07/20/2017</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>ProductEngineerApproval</variable_name>"
+						"<variable_value>Prod Engg Name</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>ProductEngineerAppDate</variable_name>"
+						"<variable_value>06/12/2017</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>EngineeringDirApproval</variable_name>"
+						"<variable_value>Eng Dir Name</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>EngineeringDirAppDate</variable_name>"
+						"<variable_value>01/11/2017</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>ProductIntegrityApproval</variable_name>"
+						"<variable_value>PI Name</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>ProductIntegrityAppDate</variable_name>"
+						"<variable_value>04/10/2017</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>QADirApproval</variable_name>"
+						"<variable_value>QA Dir Name</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>QADirAppDate</variable_name>"
+						"<variable_value>06/09/2017</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>LegalApproval</variable_name>"
+						"<variable_value>Legal Name</variable_value>"
+					"</pdm_variable>"
+					"<pdm_variable>"
+						"<variable_name>LegalAppDate</variable_name>"
+						"<variable_value>02/21/2017</variable_value>"
+					"</pdm_variable>"
+				"</pdm_variable_list>";
+			tinyxml2::XMLDocument doc;
+			doc.Parse(xml);
+			// // doc.LoadFile("variables.xml");
+			tinyxml2::XMLElement* pdm_variable = doc.FirstChildElement("pdm_variable_list")->FirstChildElement("pdm_variable");
+			if (pdm_variable)
+			{
+				do
+				{
+					tinyxml2::XMLElement* variable_name = pdm_variable->FirstChildElement("variable_name");
+					tinyxml2::XMLElement* variable_value = pdm_variable->FirstChildElement("variable_value");
+					string var_name = variable_name->GetText();
+					string var_value = variable_value->GetText();
+
+					if (headerInfoByVariables.find(var_name) != headerInfoByVariables.end())
+					{
+						string rowHeader = headerInfoByVariables[var_name].row;
+						string columnHeader = headerInfoByVariables[var_name].column;
+						variableValuesByHeaders[rowHeader][columnHeader] = var_value;
+						vRowHeaders[rowHeader] = 0.0;
+						hColHeaders[columnHeader] = 0.0;
+					}
+
+					pdm_variable = pdm_variable->NextSiblingElement();
+
+				} while (pdm_variable);
+			}
 			
-			std::map <string, AIReal> hColHeaders;
-			std::map <string, AIReal> vRowHeaders;
+			DocumentTextResourcesRef docTextResourcesRef = NULL;
+			ASErr result = sAIDocument->GetDocumentTextResources(&docTextResourcesRef);
+			aisdk::check_ai_error(result);
+
+			IDocumentTextResources resources(docTextResourcesRef);
+			ICharStyle normalCharStyle = resources.GetNormalCharStyle();
+			ICharFeatures features;
+			features.SetCharacterRotation(90);
+
+			// normalCharStyle.ReplaceOrAddFeatures(features);
+
+		
+			AIRealMatrix headerMatrix;
 
 			AIArtHandle artGroup = NULL;
 			result = sAIArt->GetFirstArtOfLayer(NULL, &artGroup);
@@ -322,13 +468,18 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 							std::string contents;
 							contents.assign(vc.begin(), vc.begin() + strLength);
 							int tmp = 0;
-
+							/*
 							if (contents == "Signature:" 
 								|| contents == "Comments:" || contents == "Approved:" 
 								|| contents == "Rejected:" || contents == "Date:" || 
 								contents == "Brand" || contents == "Marketing"
-								|| contents == "Engineer " || contents == "Integrity "
+								|| contents == "Engineer " || contents == "Engineering " 
+								|| contents == "Integrity "
 								|| contents == "PI" || contents == "Legal")
+							*/
+							bool bColumnIndexPresent = hColHeaders.find(contents) != hColHeaders.end();
+							bool bRowIndexPresent = vRowHeaders.find(contents) != vRowHeaders.end();
+							if(bRowIndexPresent || bColumnIndexPresent)
 							{
 								
 								AIArtHandle frameArt = NULL;
@@ -340,16 +491,21 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 								result = sAITextFrame->GetPointTextAnchor(textFrameArt, &anchor);
 								aisdk::check_ai_error(result);
 
-								if (contents == "Signature:"
-									|| contents == "Comments:" || contents == "Approved:"
-									|| contents == "Rejected:" || contents == "Date:")
+								//if (contents == "Signature:"
+								//	|| contents == "Comments:" || contents == "Approved:"
+								//	|| contents == "Rejected:" || contents == "Date:")
+								if(bColumnIndexPresent)
 								{
 									hColHeaders[contents] = anchor.v;
+									headerMatrix = textFrame.GetMatrix();
 								}
 
-								if (contents == "Brand" || contents == "Marketing"
-									|| contents == "Engineer " || contents == "Integrity "
-									|| contents == "PI" || contents == "Legal")
+								/*if (contents == "Brand" || contents == "Marketing"
+									|| contents == "Engineer " 
+									|| contents == "Engineering "
+									|| contents == "Integrity "
+									|| contents == "PI" || contents == "Legal")*/
+								if(bRowIndexPresent)
 								{
 									vRowHeaders[contents] = anchor.h;
 								}
@@ -390,22 +546,24 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						newAnchor.v = colLeft;
 						newAnchor.h = rowTop;
 						AIArtHandle textFrame = NULL;
-						result = sAITextFrame->NewPointText(kPlaceAboveAll, artGroup, orient, newAnchor, &textFrame);
+						result = sAITextFrame->NewPointText(kPlaceAboveAll, artGroup, orient, { 0, 0 }, &textFrame);
 						aisdk::check_ai_error(result);
 
 
 						//The matrix for the position and rotation of the point text object. 
 						//The AIRealMathSuite and the AITransformArtSuite are used. 
 						AIRealMatrix matrix;
-						AIReal RotationAngle = kAIRealPi2;
-						
-						//Then concat a translation to the matrix. 
-						// sAIRealMath->AIRealMatrixSetTranslate(&matrix, newAnchor.h, newAnchor.v);
+						matrix.Init();
+						AIReal RotationAngle = kAIRealPi2; // It works only for 360 or 0
+
+						//
 						//Set the rotation matrix. 
-						sAIRealMath->AIRealMatrixSetRotate(&matrix, RotationAngle);
-						sAIRealMath->AIRealMatrixInvert(&matrix);
+						sAIRealMath->AIRealMatrixConcatRotate(&matrix, RotationAngle);
+						//Then concat a translation to the matrix. 
+						sAIRealMath->AIRealMatrixConcatTranslate(&matrix, newAnchor.h, newAnchor.v);
+						// sAIRealMath->AIRealMatrixInvert(&matrix);
 						//Apply the matrix to the point text object. 
-						// error = sAITransformArt->TransformArt(textFrame, &matrix, 0, kTransformObjects);
+						error = sAITransformArt->TransformArt(textFrame, &matrix, 0, kTransformObjects);
 
 
 						// Set the contents of the text range.
@@ -413,8 +571,22 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						result = sAITextFrame->GetATETextRange(textFrame, &range);
 						aisdk::check_ai_error(result);
 						ITextRange crange(range);
-						crange.InsertAfter(ai::UnicodeString("Text").as_ASUnicode().c_str());
+						string text = "";
+						if (variableValuesByHeaders.find(rowIndex) != variableValuesByHeaders.end())
+						{
+							if (variableValuesByHeaders[rowIndex].find(colIndex) != variableValuesByHeaders[rowIndex].end())
+							{
+								text = variableValuesByHeaders[rowIndex][colIndex];
+							}
+						}
+						crange.InsertAfter(ai::UnicodeString(text).as_ASUnicode().c_str());
+						
+						// crange.Select();
+						// error = sAITransformArt->TransformArt(textFrame, &headerMatrix, 0, kTransformObjects);
 
+						// ITextRanges tmpTextRanges = crange.GetTextSelection();
+						// tmpTextRanges.SetLocalCharFeatures(features);
+						// crange.SetLocalCharFeatures(features);
 						innerTextRange[colIndex] = textFrame;
 						
 

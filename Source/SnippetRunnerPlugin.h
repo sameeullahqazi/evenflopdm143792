@@ -17,6 +17,10 @@
 #define __SnippetRunnerPlugin_h__
 
 #include "Plugin.hpp"
+typedef struct {
+	string row;
+	string column;
+} TitleBlockHeaderInfo;
 
 class SnippetRunnerPanelController;
 
