@@ -22,6 +22,11 @@ typedef struct {
 	string column;
 } TitleBlockHeaderInfo;
 
+typedef struct {
+	string name;
+	string value;
+} PDMVariable;
+
 class SnippetRunnerPanelController;
 
 /**	Creates a new SnippetRunnerPlugin.

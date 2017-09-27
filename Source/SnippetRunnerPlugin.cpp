@@ -35,14 +35,18 @@
 #include "SnpArtHelper.h"
 
 #include "tinyxml2.h"
+#include "PdmReaderWriter.h"
 
 using namespace ATE;
+using namespace PdmMetaDataTools;
 
 extern ImportSuite gPostStartupSuites[];
 
 SnippetRunnerPlugin*	gPlugin = NULL;
 std::map<string, map<string, AIArtHandle>>	textFrames;
-
+map < string, map<string, PDMVariable>> variablesByHeaders;
+tinyxml2::XMLDocument* doc;
+std::map<string, tinyxml2::XMLElement*> xmlTextVariables;
 /*
 */
 Plugin* AllocatePlugin(SPPluginRef pluginRef)
@@ -280,10 +284,41 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 		fSnippetRunnerPanelController->RegisterCSXSEventListeners();
 	}
 
+	ai::FilePath filePath;
+	sAIDocument->GetDocumentFileSpecification(filePath);
+	
 	if (strcmp(message->type, kAIDocumentOpenedNotifier) == 0)
 	{
+		/*
+		tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();
+		tinyxml2::XMLNode* element = doc->InsertEndChild(doc->NewElement("element"));
+		tinyxml2::XMLElement* sub[3] = { doc->NewElement("sub"), doc->NewElement("sub"), doc->NewElement("sub") };
+		for (int i = 0; i<3; ++i) {
+			sub[i]->SetAttribute("attrib", i);
+			// sub[i]->SetValue("1");
+		}
+		element->InsertEndChild(sub[2]);
+		const int dummyInitialValue = 1000;
+		int dummyValue = dummyInitialValue;
 
+		tinyxml2::XMLNode* comment = element->InsertFirstChild(doc->NewComment("comment"));
+		comment->SetUserData(&dummyValue);
+		element->InsertAfterChild(comment, sub[0]);
+		element->InsertAfterChild(sub[0], sub[1]);
+		tinyxml2::XMLText* textNode = doc->NewText("& Text!");
+		tinyxml2::XMLNode* xmlNode = sub[2]->InsertFirstChild(textNode);
 
+		tinyxml2::XMLPrinter streamer;
+		doc->Print(&streamer);
+		// printf("%s", streamer.CStr());
+		sAIUser->MessageAlert(ai::UnicodeString(streamer.CStr()));
+
+		// textNode->SetValue("123");
+		xmlNode->SetValue("456");
+		tinyxml2::XMLPrinter streamer2;
+		doc->Print(&streamer2);
+		sAIUser->MessageAlert(ai::UnicodeString(streamer2.CStr()));
+		*/
 		/*
 			1.	DEFINE ALL ROW AND COLUMN HEADER NAMES BASED UPON VARIABLE NAMES
 			
@@ -312,27 +347,38 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 		headerInfoByVariables["ProductEngineerAppDate"] = { "Engineer ", "Date:" };
 		headerInfoByVariables["EngineeringDirApproval"] = { "Engineering ", "Signature:" };
 		headerInfoByVariables["EngineeringDirAppDate"] = { "Engineering ", "Date:" };
-		
 		headerInfoByVariables["ProductIntegrityApproval"] = { "Integrity ", "Signature:" };
 		headerInfoByVariables["ProductIntegrityAppDate"] = { "Integrity ", "Date:" };
-
 		headerInfoByVariables["QADirApproval"] = { "Quality ", "Signature:" };
 		headerInfoByVariables["QADirAppDate"] = { "Quality ", "Date:" };
-
 		headerInfoByVariables["LegalApproval"] = { "Legal ", "Signature:" };
 		headerInfoByVariables["LegalAppDate"] = { "Legal ", "Date:" };
-		
 
-		map < string, map<string, string>> variableValuesByHeaders;
+		headerInfoByVariables["xmp:BrandManagerApproval"] = { "Brand", "Signature:" };
+		headerInfoByVariables["xmp:BrandManagerAppDate"] = { "Brand", "Date:" };
+		headerInfoByVariables["xmp:MarketingDirApproval"] = { "Marketing", "Signature:" };
+		headerInfoByVariables["xmp:MarketingDirAppDate"] = { "Marketing", "Date:" };
+		headerInfoByVariables["xmp:ProductEngineerApproval"] = { "Engineer ", "Signature:" };
+		headerInfoByVariables["xmp:ProductEngineerAppDate"] = { "Engineer ", "Date:" };
+		headerInfoByVariables["xmp:EngineeringDirApproval"] = { "Engineering ", "Signature:" };
+		headerInfoByVariables["xmp:EngineeringDirAppDate"] = { "Engineering ", "Date:" };
+		headerInfoByVariables["xmp:ProductIntegrityApproval"] = { "Integrity ", "Signature:" };
+		headerInfoByVariables["xmp:ProductIntegrityAppDate"] = { "Integrity ", "Date:" };
+		headerInfoByVariables["xmp:QADirApproval"] = { "Quality ", "Signature:" };
+		headerInfoByVariables["xmp:QADirAppDate"] = { "Quality ", "Date:" };
+		headerInfoByVariables["xmp:LegalApproval"] = { "Legal ", "Signature:" };
+		headerInfoByVariables["xmp:LegalAppDate"] = { "Legal ", "Date:" };
+		
 		std::map <string, AIReal> hColHeaders;
 		std::map <string, AIReal> vRowHeaders;
-		int documentOpened = 1;
+
+		const char* fullFilePath = filePath.GetFullPath().as_Platform().c_str();
 		// sAIUser->MessageAlert(ai::UnicodeString("A document was just opened!"));
 		ASErr result = kNoErr;
 		try
 		{
 			//	Fill these up with the required values above.
-			static const char* xml =
+			/*static const char* xml =
 				"<success>true</success>"
 				"<debug>Filepath passed = C:\dev\desktopDev\lampros\evenfloPdm\aiFileSamples\Balance + _WideNeck_Eng_9oz_1pk_CTN_3049 - 423_10AUG2016_OUTLINES.ai&#x0A; No smart handler available.trying packet scanning.&#x0A; &#x0A; CreatorTool = Adobe Illustrator CS6(Windows)&#x0A; terminated successfully after reading values&#x0A; </debug>"
 				"<message></message>"
@@ -394,10 +440,13 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						"<variable_value>02/21/2017</variable_value>"
 					"</pdm_variable>"
 				"</pdm_variable_list>";
-			tinyxml2::XMLDocument doc;
-			doc.Parse(xml);
+			*/
+			const char* xml = MetaDataReaderWriter::preCheckIn(fullFilePath).c_str();
+			doc = new tinyxml2::XMLDocument();
+			doc->Parse(xml);
+			
 			// // doc.LoadFile("variables.xml");
-			tinyxml2::XMLElement* pdm_variable = doc.FirstChildElement("pdm_variable_list")->FirstChildElement("pdm_variable");
+			tinyxml2::XMLElement* pdm_variable = doc->FirstChildElement("pdm_variable_list")->FirstChildElement("pdm_variable");
 			if (pdm_variable)
 			{
 				do
@@ -411,9 +460,11 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 					{
 						string rowHeader = headerInfoByVariables[var_name].row;
 						string columnHeader = headerInfoByVariables[var_name].column;
-						variableValuesByHeaders[rowHeader][columnHeader] = var_value;
+						variablesByHeaders[rowHeader][columnHeader] = { var_name, var_value };
 						vRowHeaders[rowHeader] = 0.0;
 						hColHeaders[columnHeader] = 0.0;
+
+						xmlTextVariables[var_name] = variable_value;
 					}
 
 					pdm_variable = pdm_variable->NextSiblingElement();
@@ -572,11 +623,11 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						aisdk::check_ai_error(result);
 						ITextRange crange(range);
 						string text = "";
-						if (variableValuesByHeaders.find(rowIndex) != variableValuesByHeaders.end())
+						if (variablesByHeaders.find(rowIndex) != variablesByHeaders.end())
 						{
-							if (variableValuesByHeaders[rowIndex].find(colIndex) != variableValuesByHeaders[rowIndex].end())
+							if (variablesByHeaders[rowIndex].find(colIndex) != variablesByHeaders[rowIndex].end())
 							{
-								text = variableValuesByHeaders[rowIndex][colIndex];
+								text = variablesByHeaders[rowIndex][colIndex].value;
 							}
 						}
 						crange.InsertAfter(ai::UnicodeString(text).as_ASUnicode().c_str());
@@ -617,7 +668,11 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 	{
 		// To Curtis Mimes: Here's where the Save event is triggered.
 		ASErr result = kNoErr;
-		int documentSaved = 1;
+		const char* fullFilePath = filePath.GetFullPath().as_Platform().c_str();
+		tinyxml2::XMLPrinter streamer;
+		doc->Print(&streamer);
+		// sAIUser->MessageAlert(ai::UnicodeString(streamer.CStr()));
+
 		map<string, map<string, AIArtHandle>>::iterator outerTextRangeIterator;
 		for (outerTextRangeIterator = textFrames.begin(); outerTextRangeIterator != textFrames.end(); outerTextRangeIterator++)
 		{
@@ -648,63 +703,30 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						std::string contents;
 						contents.assign(vc.begin(), vc.begin() + strLength);
 						// To Curtis Mimes: And Here's where the modified text field content gets displayed (the contents variable).
-						sAIUser->MessageAlert(ai::UnicodeString(contents));
+						
+						string prevVarValue = variablesByHeaders[rowIndex][colIndex].value;
+						if (contents != prevVarValue)
+						{
+							string variableName = variablesByHeaders[rowIndex][colIndex].name;
+							// contents.append(":- ");
+							// contents.append(variableName);
+							// sAIUser->MessageAlert(ai::UnicodeString(contents));
+							xmlTextVariables[variableName]->SetText(contents.c_str());
+						}
 					}
 				}
 
 			}
 		}
+		
+		tinyxml2::XMLPrinter streamer2;
+		doc->Print(&streamer2);
+		// sAIUser->MessageAlert(ai::UnicodeString(streamer2.CStr()));
+		MetaDataReaderWriter::sync(fullFilePath, streamer2.CStr());
 	}
 	else if (strcmp(message->type, kAIDocumentNewNotifier) == 0)
 	{
 		int documentNew = 1;
-		sAIUser->MessageAlert(ai::UnicodeString("A new document was just created!"));
-		
-		ASErr result = kNoErr;
-		try {
-			// Get the group art that contains all the art in the current layer.
-			AIArtHandle artGroup = NULL;
-			result = sAIArt->GetFirstArtOfLayer(NULL, &artGroup);
-			aisdk::check_ai_error(result);
-
-			// Add the new point text item to the layer.
-			AITextOrientation orient = kHorizontalTextOrientation;
-			AIRealPoint anchor = {};
-			anchor.h = -10;
-			anchor.v = -50;
-			AIArtHandle textFrame = NULL;
-			result = sAITextFrame->NewPointText(kPlaceAboveAll, artGroup, orient, anchor, &textFrame);
-			aisdk::check_ai_error(result);
-
-			// Set the contents of the text range.
-			TextRangeRef range = NULL;
-			result = sAITextFrame->GetATETextRange(textFrame, &range);
-			aisdk::check_ai_error(result);
-			ITextRange crange(range);
-			crange.InsertAfter(ai::UnicodeString("New point text item").as_ASUnicode().c_str());
-
-			//Choose the rotation angle for the point text object. 
-			//For instance 90°. 
-			AIReal RotationAngle;
-			RotationAngle = kAIRealPi2;
-			
-			//The matrix for the position and rotation of the point text object. 
-			//The AIRealMathSuite and the AITransformArtSuite are used. 
-			AIRealMatrix matrix;
-			//Set the rotation matrix. 
-			sAIRealMath->AIRealMatrixSetRotate(&matrix, RotationAngle);
-			//Then concat a translation to the matrix. 
-			// sAIRealMath->AIRealMatrixConcatTranslate(&matrix, anchor.h, anchor.v);
-			//Apply the matrix to the point text object. 
-			error = sAITransformArt->TransformArt(textFrame, &matrix, 0, kTransformObjects);
-			
-		}
-		catch (ai::Error& ex) {
-			result = ex;
-		}
-		catch (ATE::Exception& ex) {
-			result = ex.error;
-		}
 		
 	}
 
