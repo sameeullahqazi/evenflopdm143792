@@ -45,6 +45,8 @@ extern ImportSuite gPostStartupSuites[];
 SnippetRunnerPlugin*	gPlugin = NULL;
 std::map<string, map<string, AIArtHandle>>	textFrames;
 map < string, map<string, PDMVariable>> variablesByHeaders;
+map <string, PDMVariable> variablesByNewInfo;
+
 tinyxml2::XMLDocument* doc;
 std::map<string, tinyxml2::XMLElement*> xmlTextVariables;
 /*
@@ -58,14 +60,14 @@ Plugin* AllocatePlugin(SPPluginRef pluginRef)
 */
 void FixupReload(Plugin* plugin)
 {
-	SnippetRunnerPlugin::FixupVTable((SnippetRunnerPlugin*) plugin);
+	SnippetRunnerPlugin::FixupVTable((SnippetRunnerPlugin*)plugin);
 }
 
 /*
 */
 ASErr SnippetRunnerPlugin::SetGlobal(Plugin *plugin)
 {
-	gPlugin = (SnippetRunnerPlugin *) plugin;
+	gPlugin = (SnippetRunnerPlugin *)plugin;
 	return kNoErr;
 }
 
@@ -116,7 +118,7 @@ ASErr SnippetRunnerPlugin::Message(char *caller, char *selector, void *message)
 
 /*
 */
-ASErr SnippetRunnerPlugin::GoMenuItem( AIMenuMessage *message )
+ASErr SnippetRunnerPlugin::GoMenuItem(AIMenuMessage *message)
 {
 	ASErr result = kNoErr;
 	try {
@@ -133,7 +135,7 @@ ASErr SnippetRunnerPlugin::GoMenuItem( AIMenuMessage *message )
 
 				fSnippetRunnerPanelController->IsPrimaryStageVisible(visible);
 
-				if(visible)
+				if (visible)
 				{
 					fSnippetRunnerPanelController->UnloadExtension();
 				}
@@ -144,7 +146,7 @@ ASErr SnippetRunnerPlugin::GoMenuItem( AIMenuMessage *message )
 			}
 		}
 	}
-	catch(ai::Error& ex) {
+	catch (ai::Error& ex) {
 		result = ex;
 	}
 	return result;
@@ -152,14 +154,14 @@ ASErr SnippetRunnerPlugin::GoMenuItem( AIMenuMessage *message )
 
 /*
 */
-ASErr SnippetRunnerPlugin::UpdateMenuItem( AIMenuMessage *message )
+ASErr SnippetRunnerPlugin::UpdateMenuItem(AIMenuMessage *message)
 {
 	// Update the Show/Hide panel menu.
 	AIBoolean visible = false;
 
-	if ( fSnippetRunnerPanelController != NULL )
+	if (fSnippetRunnerPanelController != NULL)
 		fSnippetRunnerPanelController->IsPrimaryStageVisible(visible);
-	
+
 	// sAIMenu->CheckItem(fShowHidePanelMenu, visible);
 
 	return kNoErr;
@@ -167,11 +169,11 @@ ASErr SnippetRunnerPlugin::UpdateMenuItem( AIMenuMessage *message )
 
 /*
 */
-ASErr SnippetRunnerPlugin::StartupPlugin( SPInterfaceMessage *message )
+ASErr SnippetRunnerPlugin::StartupPlugin(SPInterfaceMessage *message)
 {
 	ASErr error = kNoErr;
 	try {
-		error = Plugin::StartupPlugin( message );
+		error = Plugin::StartupPlugin(message);
 		aisdk::check_ai_error(error);
 		error = this->AddNotifiers(message);
 		aisdk::check_ai_error(error);
@@ -186,20 +188,20 @@ ASErr SnippetRunnerPlugin::StartupPlugin( SPInterfaceMessage *message )
 
 /*
 */
-ASErr SnippetRunnerPlugin::ShutdownPlugin( SPInterfaceMessage *message )
+ASErr SnippetRunnerPlugin::ShutdownPlugin(SPInterfaceMessage *message)
 {
 	ASErr error = kNoErr;
-	
-	if ( fSnippetRunnerPanelController )
+
+	if (fSnippetRunnerPanelController)
 	{
 		fSnippetRunnerPanelController->RemoveEventListeners();
 		delete fSnippetRunnerPanelController;
 		fSnippetRunnerPanelController = NULL;
 		Plugin::LockPlugin(false);
 	}
-	
+
 	this->ReleasePostStartupSuites();
-	error = Plugin::ShutdownPlugin( message );
+	error = Plugin::ShutdownPlugin(message);
 	return error;
 }
 
@@ -229,7 +231,7 @@ ASErr SnippetRunnerPlugin::PostStartupPlugin()
 			error = Plugin::LockPlugin(true);
 			if (error) { return error; }
 		}
-	} 
+	}
 	catch (ai::Error ex) {
 		error = ex;
 	}
@@ -238,23 +240,22 @@ ASErr SnippetRunnerPlugin::PostStartupPlugin()
 
 /*
 */
-ASErr SnippetRunnerPlugin::AddNotifiers( SPInterfaceMessage *message )
+ASErr SnippetRunnerPlugin::AddNotifiers(SPInterfaceMessage *message)
 {
 	ASErr error = kNoErr;
 	try {
 		error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner " kAIApplicationShutdownNotifier, kAIApplicationShutdownNotifier, &fAppShutdownNotifier);
 		aisdk::check_ai_error(error);
-		error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner " kAIArtSelectionChangedNotifier,  kAIArtSelectionChangedNotifier, &fArtSelectionChangedNotifier);
+		error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner " kAIArtSelectionChangedNotifier, kAIArtSelectionChangedNotifier, &fArtSelectionChangedNotifier);
 		aisdk::check_ai_error(error);
 		error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner " kAICSXSPlugPlugSetupCompleteNotifier, kAICSXSPlugPlugSetupCompleteNotifier, &fCSXSPlugPlugSetupCompleteNotifier);
 		aisdk::check_ai_error(error);
 
 		error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner",
 			kAIDocumentOpenedNotifier, NULL);
-		error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner",
-			kAIDocumentSavedNotifier, NULL);
-		error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner",
-			kAIDocumentNewNotifier, NULL);
+		// error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner",
+		//	kAIDocumentSavedNotifier, NULL);
+		// error = sAINotifier->AddNotifier(message->d.self, "SnippetRunner", kAIDocumentNewNotifier, NULL);
 	}
 	catch (ai::Error& ex) {
 		error = ex;
@@ -264,11 +265,11 @@ ASErr SnippetRunnerPlugin::AddNotifiers( SPInterfaceMessage *message )
 
 /*
 */
-ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
+ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 {
 	ASErr error = kNoErr;
 
-	if ( message->notifier == fAppShutdownNotifier )
+	if (message->notifier == fAppShutdownNotifier)
 	{
 		SnippetRunnerLog::DeleteInstance();
 		SnippetRunnerParameter::DeleteInstance();
@@ -279,98 +280,102 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 	{
 		fSnippetRunnerPanelController->HandleModelChanged();
 	}
-	else if ( message->notifier == fCSXSPlugPlugSetupCompleteNotifier )
+	else if (message->notifier == fCSXSPlugPlugSetupCompleteNotifier)
 	{
 		fSnippetRunnerPanelController->RegisterCSXSEventListeners();
 	}
 
 	ai::FilePath filePath;
 	sAIDocument->GetDocumentFileSpecification(filePath);
-	
+
 	if (strcmp(message->type, kAIDocumentOpenedNotifier) == 0)
 	{
+
 		/*
-		tinyxml2::XMLDocument* doc = new tinyxml2::XMLDocument();
-		tinyxml2::XMLNode* element = doc->InsertEndChild(doc->NewElement("element"));
-		tinyxml2::XMLElement* sub[3] = { doc->NewElement("sub"), doc->NewElement("sub"), doc->NewElement("sub") };
-		for (int i = 0; i<3; ++i) {
-			sub[i]->SetAttribute("attrib", i);
-			// sub[i]->SetValue("1");
+		1.	DEFINE ALL ROW AND COLUMN HEADER NAMES BASED UPON VARIABLE NAMES
+
+		headerInfoByVariables = {
+		'varname1': ['Brand', 'Signature:']
+		'varname2': ['Brand'], 'Approved:'],
 		}
-		element->InsertEndChild(sub[2]);
-		const int dummyInitialValue = 1000;
-		int dummyValue = dummyInitialValue;
-
-		tinyxml2::XMLNode* comment = element->InsertFirstChild(doc->NewComment("comment"));
-		comment->SetUserData(&dummyValue);
-		element->InsertAfterChild(comment, sub[0]);
-		element->InsertAfterChild(sub[0], sub[1]);
-		tinyxml2::XMLText* textNode = doc->NewText("& Text!");
-		tinyxml2::XMLNode* xmlNode = sub[2]->InsertFirstChild(textNode);
-
-		tinyxml2::XMLPrinter streamer;
-		doc->Print(&streamer);
-		// printf("%s", streamer.CStr());
-		sAIUser->MessageAlert(ai::UnicodeString(streamer.CStr()));
-
-		// textNode->SetValue("123");
-		xmlNode->SetValue("456");
-		tinyxml2::XMLPrinter streamer2;
-		doc->Print(&streamer2);
-		sAIUser->MessageAlert(ai::UnicodeString(streamer2.CStr()));
+		2.	WHEN ITERATING THROUGH THE XML
+		i.	CREATE A NEW ARRAY BY FLIPPLING THE ABOVE ARRAY
+		variableNamesByHeaders = {
+		'Brand': {
+		'Signature': ["varname1", "varval1"],
+		'Approved': "varname2", "varval2"]
+		}
+		''
+		}
+		ii.	Create row header strings
+		iii.	Create col header strings
 		*/
-		/*
-			1.	DEFINE ALL ROW AND COLUMN HEADER NAMES BASED UPON VARIABLE NAMES
-			
-			headerInfoByVariables = {
-				'varname1': ['Brand', 'Signature:']
-				'varname2': ['Brand'], 'Approved:'],
-			}
-			2.	WHEN ITERATING THROUGH THE XML
-				i.	CREATE A NEW ARRAY BY FLIPPLING THE ABOVE ARRAY 
-				variableNamesByHeaders = {
-					'Brand': {
-						'Signature': ["varname1", "varval1"],
-						'Approved': "varname2", "varval2"]
-					}
-					''
-				}
-				ii.	Create row header strings
-				iii.	Create col header strings
-		*/
+
 		map<string, TitleBlockHeaderInfo> headerInfoByVariables;
-		headerInfoByVariables["BrandManagerApproval"] = { "Brand", "Signature:" };
-		headerInfoByVariables["BrandManagerAppDate"] = { "Brand", "Date:" };
-		headerInfoByVariables["MarketingDirApproval"] = { "Marketing", "Signature:" };
-		headerInfoByVariables["MarketingDirAppDate"] = { "Marketing", "Date:" };
-		headerInfoByVariables["ProductEngineerApproval"] = { "Engineer ", "Signature:" };
-		headerInfoByVariables["ProductEngineerAppDate"] = { "Engineer ", "Date:" };
-		headerInfoByVariables["EngineeringDirApproval"] = { "Engineering ", "Signature:" };
-		headerInfoByVariables["EngineeringDirAppDate"] = { "Engineering ", "Date:" };
-		headerInfoByVariables["ProductIntegrityApproval"] = { "Integrity ", "Signature:" };
-		headerInfoByVariables["ProductIntegrityAppDate"] = { "Integrity ", "Date:" };
-		headerInfoByVariables["QADirApproval"] = { "Quality ", "Signature:" };
-		headerInfoByVariables["QADirAppDate"] = { "Quality ", "Date:" };
-		headerInfoByVariables["LegalApproval"] = { "Legal ", "Signature:" };
-		headerInfoByVariables["LegalAppDate"] = { "Legal ", "Date:" };
+		map<string, string> newInfoByVariables;
 
-		headerInfoByVariables["xmp:BrandManagerApproval"] = { "Brand", "Signature:" };
-		headerInfoByVariables["xmp:BrandManagerAppDate"] = { "Brand", "Date:" };
-		headerInfoByVariables["xmp:MarketingDirApproval"] = { "Marketing", "Signature:" };
-		headerInfoByVariables["xmp:MarketingDirAppDate"] = { "Marketing", "Date:" };
-		headerInfoByVariables["xmp:ProductEngineerApproval"] = { "Engineer ", "Signature:" };
-		headerInfoByVariables["xmp:ProductEngineerAppDate"] = { "Engineer ", "Date:" };
-		headerInfoByVariables["xmp:EngineeringDirApproval"] = { "Engineering ", "Signature:" };
-		headerInfoByVariables["xmp:EngineeringDirAppDate"] = { "Engineering ", "Date:" };
-		headerInfoByVariables["xmp:ProductIntegrityApproval"] = { "Integrity ", "Signature:" };
-		headerInfoByVariables["xmp:ProductIntegrityAppDate"] = { "Integrity ", "Date:" };
-		headerInfoByVariables["xmp:QADirApproval"] = { "Quality ", "Signature:" };
-		headerInfoByVariables["xmp:QADirAppDate"] = { "Quality ", "Date:" };
-		headerInfoByVariables["xmp:LegalApproval"] = { "Legal ", "Signature:" };
-		headerInfoByVariables["xmp:LegalAppDate"] = { "Legal ", "Date:" };
-		
+		AIReal defaultDateHOffset = -30.0;
+		AIReal defaultCheckboxHOffset = -5.0;
+		AIReal defaultCheckboxVOffset = -5.0;
+
+
+		headerInfoByVariables["xmp:MarketingAppReq"] = { "Product \rMarketing ", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset };
+		headerInfoByVariables["xmp:MarketingApproval"] = { "Product \rMarketing ", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:MarketingAppDate"] = { "Product \rMarketing ", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:MktgBrandAppReq"] = { "Brand \rMarketing ", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset };
+		headerInfoByVariables["xmp:MktgBrandApproval"] = { "Brand \rMarketing ", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:MktgBrandAppDate"] = { "Brand \rMarketing ", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:MarketingDirAppReq"] = { "Marketing\rDirector ", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset };
+		headerInfoByVariables["xmp:MarketingDirApproval"] = { "Marketing\rDirector ", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:MarketingDirAppDate"] = { "Marketing\rDirector ", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:EngineeringAppReq"] = { "Engineering", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset + 5 };
+		headerInfoByVariables["xmp:EngineeringApproval"] = { "Engineering", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:EngAppDate"] = { "Engineering", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:OperationsDirAppReq"] = { "Operations\rDirector", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset };
+		headerInfoByVariables["xmp:OperationsDirApproval"] = { "Operations\rDirector", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:OperationsDirAppDate"] = { "Operations\rDirector", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:QAAppReq"] = { "Product\rIntegrity", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset };
+		headerInfoByVariables["xmp:QAApproval"] = { "Product\rIntegrity", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:QAAppDate"] = { "Product\rIntegrity", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:QADirAppReq"] = { "Quality\rManger", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset };
+		headerInfoByVariables["xmp:QADirApproval"] = { "Quality\rManger", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:QADirAppDate"] = { "Quality\rManger", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:LegalAppReq"] = { "Legal", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset + 5 };
+		headerInfoByVariables["xmp:LegalApproval"] = { "Legal", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:LegalAppDate"] = { "Legal", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:MexicoAppReq"] = { "KCM", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset + 5 };
+		headerInfoByVariables["xmp:MexicoApproval"] = { "KCM", "Approved By:", false, 0.0, 0.0 };
+		headerInfoByVariables["xmp:MexicoAppDate"] = { "KCM", "Date:", false, defaultDateHOffset, 0 };
+
+		headerInfoByVariables["xmp:ToolingApproved"] = { "FINAL ROUTING", "Approval\rNeeded", true, defaultCheckboxHOffset, defaultCheckboxVOffset + 8 };
+
 		std::map <string, AIReal> hColHeaders;
 		std::map <string, AIReal> vRowHeaders;
+		std::map <string, AIRealPoint> newInfoCoordinates;
+
+		newInfoByVariables["xmp:DrawnDate"] = "Date Created:";
+		newInfoByVariables["xmp:DrawnBy"] = "Author:";
+		newInfoByVariables["xmp:SpecNo"] = "Spec #";
+		newInfoByVariables["xmp:LegacySpecNo"] = "Legacy Spec #";
+		newInfoByVariables["xmp:Revision"] = "Revision:";
+		newInfoByVariables["xmp:Description"] = "Description:";
+		newInfoByVariables["xmp:ECNumber"] = "EC #:";
+		newInfoByVariables["xmp:Project"] = "Project #:";
+		newInfoByVariables["xmp:Project Description"] = "Project Description:";
+		newInfoByVariables["xmp:ArtworkType"] = "Artwork Type:";
+		newInfoByVariables["xmp:Dieline"] = "Die/Drawing:";
+		newInfoByVariables["xmp:Material"] = "Substrate:";
+
+		newInfoByVariables["xmp:TemplateNo"] = "Template:";
+		newInfoByVariables["xmp:TemplateRev"] = "Template Rev:";
 
 		const char* fullFilePath = filePath.GetFullPath().as_Platform().c_str();
 		// sAIUser->MessageAlert(ai::UnicodeString("A document was just opened!"));
@@ -378,74 +383,193 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 		try
 		{
 			//	Fill these up with the required values above.
-			/*static const char* xml =
+			static const char* xml =
 				"<success>true</success>"
 				"<debug>Filepath passed = C:\dev\desktopDev\lampros\evenfloPdm\aiFileSamples\Balance + _WideNeck_Eng_9oz_1pk_CTN_3049 - 423_10AUG2016_OUTLINES.ai&#x0A; No smart handler available.trying packet scanning.&#x0A; &#x0A; CreatorTool = Adobe Illustrator CS6(Windows)&#x0A; terminated successfully after reading values&#x0A; </debug>"
 				"<message></message>"
 				"<pdm_variable_list>"
-					"<pdm_variable>"
-						"<variable_name>BrandManagerApproval</variable_name>"
-						"<variable_value>Brand Manager Name</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>BrandManagerAppDate</variable_name>"
-						"<variable_value>Jul 12th, 2017</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>MarketingDirApproval</variable_name>"
-						"<variable_value>Marteking Director Name</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>MarketingDirAppDate</variable_name>"
-						"<variable_value>07/20/2017</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>ProductEngineerApproval</variable_name>"
-						"<variable_value>Prod Engg Name</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>ProductEngineerAppDate</variable_name>"
-						"<variable_value>06/12/2017</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>EngineeringDirApproval</variable_name>"
-						"<variable_value>Eng Dir Name</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>EngineeringDirAppDate</variable_name>"
-						"<variable_value>01/11/2017</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>ProductIntegrityApproval</variable_name>"
-						"<variable_value>PI Name</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>ProductIntegrityAppDate</variable_name>"
-						"<variable_value>04/10/2017</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>QADirApproval</variable_name>"
-						"<variable_value>QA Dir Name</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>QADirAppDate</variable_name>"
-						"<variable_value>06/09/2017</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>LegalApproval</variable_name>"
-						"<variable_value>Legal Name</variable_value>"
-					"</pdm_variable>"
-					"<pdm_variable>"
-						"<variable_name>LegalAppDate</variable_name>"
-						"<variable_value>02/21/2017</variable_value>"
-					"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MarketingAppReq</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MarketingApproval</variable_name>"
+				"<variable_value>Samee Qazi</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MarketingAppDate</variable_name>"
+				"<variable_value>17-09-2010</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MktgBrandAppReq</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MktgBrandApproval</variable_name>"
+				"<variable_value>Curtis Mimes</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MktgBrandAppDate</variable_name>"
+				"<variable_value>20-09-2016</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MarketingDirAppReq</variable_name>"
+				"<variable_value>0</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MarketingDirApproval</variable_name>"
+				"<variable_value>Troy Davis</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MarketingDirAppDate</variable_name>"
+				"<variable_value>23-10-2016</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:EngineeringAppReq</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:EngineeringApproval</variable_name>"
+				"<variable_value>Troy Davis</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:EngAppDate</variable_name>"
+				"<variable_value>12-09-2015</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:OperationsDirAppReq</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:OperationsDirApproval</variable_name>"
+				"<variable_value>Troy Davis</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:OperationsDirAppDate</variable_name>"
+				"<variable_value>12-09-2015</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:QAAppReq</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:QAApproval</variable_name>"
+				"<variable_value>Troy Davis</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:QAAppDate</variable_name>"
+				"<variable_value>12-09-2015</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:QADirAppReq</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:QADirApproval</variable_name>"
+				"<variable_value>Troy Davis</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:QADirAppDate</variable_name>"
+				"<variable_value>12-09-2015</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:LegalAppReq</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:LegalApproval</variable_name>"
+				"<variable_value>Troy Davis</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:LegalAppDate</variable_name>"
+				"<variable_value>12-09-2015</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MexicoAppReq</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MexicoApproval</variable_name>"
+				"<variable_value>Troy Davis</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:MexicoAppDate</variable_name>"
+				"<variable_value>12-09-2015</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:DrawnDate</variable_name>"
+				"<variable_value>11-06-2015</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:DrawnBy</variable_name>"
+				"<variable_value>Muzna Roghay</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:SpecNo</variable_name>"
+				"<variable_value>123</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:SpecNo</variable_name>"
+				"<variable_value>123</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:LegacySpecNo</variable_name>"
+				"<variable_value>12323</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:Revision</variable_name>"
+				"<variable_value>123232</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:ECNumber</variable_name>"
+				"<variable_value>123123534</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:Description</variable_name>"
+				"<variable_value>Some description</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:Project</variable_name>"
+				"<variable_value>New project</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:Project Description</variable_name>"
+				"<variable_value>New project desc. New project desc.</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:ArtworkType</variable_name>"
+				"<variable_value>AT</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:Dieline</variable_name>"
+				"<variable_value>Drawing Line</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:Material</variable_name>"
+				"<variable_value>Copper</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:ToolingApproved</variable_name>"
+				"<variable_value>1</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:TemplateNo</variable_name>"
+				"<variable_value>9876934</variable_value>"
+				"</pdm_variable>"
+				"<pdm_variable>"
+				"<variable_name>xmp:TemplateRev</variable_name>"
+				"<variable_value>#3FSNE3267</variable_value>"
+				"</pdm_variable>"
 				"</pdm_variable_list>";
-			*/
-			const char* xml = MetaDataReaderWriter::preCheckIn(fullFilePath).c_str();
+
+			// const char* xml = MetaDataReaderWriter::preCheckIn(fullFilePath).c_str();
+
+			/***********************************************************
+			//////////////////	BEGIN EXTRACTING VARIABLE CONTENT FROM THE XML CONTENT//////////////
+			***********************************************************/
 			doc = new tinyxml2::XMLDocument();
 			doc->Parse(xml);
-			
-			// // doc.LoadFile("variables.xml");
+
 			tinyxml2::XMLElement* pdm_variable = doc->FirstChildElement("pdm_variable_list")->FirstChildElement("pdm_variable");
 			if (pdm_variable)
 			{
@@ -467,23 +591,21 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						xmlTextVariables[var_name] = variable_value;
 					}
 
+					if (newInfoByVariables.find(var_name) != newInfoByVariables.end())
+					{
+						string tmpHeader = newInfoByVariables[var_name];
+						variablesByNewInfo[tmpHeader] = { var_name, var_value };
+						xmlTextVariables[var_name] = variable_value;
+						newInfoCoordinates[tmpHeader] = { 0.0, 0.0 };
+					}
+
 					pdm_variable = pdm_variable->NextSiblingElement();
 
 				} while (pdm_variable);
 			}
-			
-			DocumentTextResourcesRef docTextResourcesRef = NULL;
-			ASErr result = sAIDocument->GetDocumentTextResources(&docTextResourcesRef);
-			aisdk::check_ai_error(result);
+			//////////////////	END EXTRACTING VARIABLE CONTENT FROM THE XML CONTENT//////////////
 
-			IDocumentTextResources resources(docTextResourcesRef);
-			ICharStyle normalCharStyle = resources.GetNormalCharStyle();
-			ICharFeatures features;
-			features.SetCharacterRotation(90);
-
-			// normalCharStyle.ReplaceOrAddFeatures(features);
-
-		
+			//
 			AIRealMatrix headerMatrix;
 
 			AIArtHandle artGroup = NULL;
@@ -495,6 +617,11 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 			SnpArtSetHelper textFrameArtSet(specs, 1);
 			if (textFrameArtSet.GetCount() > 0)
 			{
+				/***********************************************************
+				//////////////////	BEGIN ITERATING THE ENTIRE TEXT OF THE .AI FILE//////////////
+				//	1.	GETTING COORDINATES FOR HEADER ROWS AND COLUMNS
+				//	2.	GETTING COORDINATES FOR ALL OTHER REQUIRED FIELDS
+				***********************************************************/
 				for (size_t i = 0; i < textFrameArtSet.GetCount(); i++)
 				{
 					AIArtHandle textFrameArt = textFrameArtSet[i];
@@ -519,54 +646,64 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 							std::string contents;
 							contents.assign(vc.begin(), vc.begin() + strLength);
 							int tmp = 0;
-							/*
-							if (contents == "Signature:" 
-								|| contents == "Comments:" || contents == "Approved:" 
-								|| contents == "Rejected:" || contents == "Date:" || 
-								contents == "Brand" || contents == "Marketing"
-								|| contents == "Engineer " || contents == "Engineering " 
-								|| contents == "Integrity "
-								|| contents == "PI" || contents == "Legal")
-							*/
+
+
+
 							bool bColumnIndexPresent = hColHeaders.find(contents) != hColHeaders.end();
 							bool bRowIndexPresent = vRowHeaders.find(contents) != vRowHeaders.end();
-							if(bRowIndexPresent || bColumnIndexPresent)
+							if (bRowIndexPresent || bColumnIndexPresent)
 							{
-								
+
 								AIArtHandle frameArt = NULL;
 								error = sAITextFrame->GetAITextFrame(textFrameRef, &frameArt);
-								// aisdk::check_ai_error(result);
-
 
 								AIRealPoint anchor;
 								result = sAITextFrame->GetPointTextAnchor(textFrameArt, &anchor);
 								aisdk::check_ai_error(result);
 
-								//if (contents == "Signature:"
-								//	|| contents == "Comments:" || contents == "Approved:"
-								//	|| contents == "Rejected:" || contents == "Date:")
-								if(bColumnIndexPresent)
+								if (bColumnIndexPresent)
 								{
-									hColHeaders[contents] = anchor.v;
+									hColHeaders[contents] = anchor.h;
 									headerMatrix = textFrame.GetMatrix();
 								}
 
-								/*if (contents == "Brand" || contents == "Marketing"
-									|| contents == "Engineer " 
-									|| contents == "Engineering "
-									|| contents == "Integrity "
-									|| contents == "PI" || contents == "Legal")*/
-								if(bRowIndexPresent)
+								if (bRowIndexPresent)
 								{
-									vRowHeaders[contents] = anchor.h;
+									vRowHeaders[contents] = anchor.v;
 								}
-								
-								
+							}
+
+							bool bNewInfoIndexPresent = variablesByNewInfo.find(contents) != variablesByNewInfo.end();
+							if (bNewInfoIndexPresent)
+							{
+								AIArtHandle frameArt = NULL;
+								error = sAITextFrame->GetAITextFrame(textFrameRef, &frameArt);
+
+								AIRealPoint anchor;
+								result = sAITextFrame->GetPointTextAnchor(textFrameArt, &anchor);
+								aisdk::check_ai_error(result);
+								int len = contents.length();
+								float widthFactor = 4.7;
+								anchor.h += len * widthFactor;
+								newInfoCoordinates[contents] = anchor;
 							}
 						}
 					}
 
 				}
+
+				//////////////////	END ITERATING THE ENTIRE TEXT OF THE .AI FILE//////////////
+
+
+
+				/**********************************************************************
+				/////////////	BEGIN CREATING TEXT FIELDS FOR TABLE ///////////////////////
+				************************************************************************/
+				ATE::ICharFeatures features;
+				FontRef fontRef;
+				AIFontKey fontKey;
+				features.SetFontSize(10);
+
 
 				map<string, AIReal>::iterator row;
 
@@ -581,7 +718,13 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 					{
 						std::string colIndex = col->first;
 						AIReal colLeft = col->second;
-						
+
+
+						string text = variablesByHeaders[rowIndex][colIndex].value;
+						string varName = variablesByHeaders[rowIndex][colIndex].name;
+
+						AIReal hOffset = headerInfoByVariables[varName].hOffset;
+						AIReal vOffset = headerInfoByVariables[varName].vOffset;
 
 						AIArtHandle newFrame;
 						SnpArtHelper artHelper;
@@ -590,31 +733,15 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						AIArtHandle artGroup = NULL;
 						result = sAIArt->GetFirstArtOfLayer(NULL, &artGroup);
 						aisdk::check_ai_error(result);
-
+						//
 						// Add the new point text item to the layer.
 						AITextOrientation orient = kHorizontalTextOrientation;
 						AIRealPoint newAnchor = {};
-						newAnchor.v = colLeft;
-						newAnchor.h = rowTop;
+						newAnchor.h = colLeft + hOffset;
+						newAnchor.v = rowTop + vOffset;
 						AIArtHandle textFrame = NULL;
-						result = sAITextFrame->NewPointText(kPlaceAboveAll, artGroup, orient, { 0, 0 }, &textFrame);
+						result = sAITextFrame->NewPointText(kPlaceAboveAll, artGroup, orient, newAnchor, &textFrame);
 						aisdk::check_ai_error(result);
-
-
-						//The matrix for the position and rotation of the point text object. 
-						//The AIRealMathSuite and the AITransformArtSuite are used. 
-						AIRealMatrix matrix;
-						matrix.Init();
-						AIReal RotationAngle = kAIRealPi2; // It works only for 360 or 0
-
-						//
-						//Set the rotation matrix. 
-						sAIRealMath->AIRealMatrixConcatRotate(&matrix, RotationAngle);
-						//Then concat a translation to the matrix. 
-						sAIRealMath->AIRealMatrixConcatTranslate(&matrix, newAnchor.h, newAnchor.v);
-						// sAIRealMath->AIRealMatrixInvert(&matrix);
-						//Apply the matrix to the point text object. 
-						error = sAITransformArt->TransformArt(textFrame, &matrix, 0, kTransformObjects);
 
 
 						// Set the contents of the text range.
@@ -622,28 +749,69 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						result = sAITextFrame->GetATETextRange(textFrame, &range);
 						aisdk::check_ai_error(result);
 						ITextRange crange(range);
-						string text = "";
-						if (variablesByHeaders.find(rowIndex) != variablesByHeaders.end())
+
+						if (headerInfoByVariables[varName].bCheckbox)
 						{
-							if (variablesByHeaders[rowIndex].find(colIndex) != variablesByHeaders[rowIndex].end())
-							{
-								text = variablesByHeaders[rowIndex][colIndex].value;
-							}
+							text = text == "1" ? "X" : "";
 						}
+						crange.SetLocalCharFeatures(features);
 						crange.InsertAfter(ai::UnicodeString(text).as_ASUnicode().c_str());
-						
-						// crange.Select();
-						// error = sAITransformArt->TransformArt(textFrame, &headerMatrix, 0, kTransformObjects);
-
-						// ITextRanges tmpTextRanges = crange.GetTextSelection();
-						// tmpTextRanges.SetLocalCharFeatures(features);
-						// crange.SetLocalCharFeatures(features);
 						innerTextRange[colIndex] = textFrame;
-						
-
 					}
 					textFrames[rowIndex] = innerTextRange;
 				}
+				/**********************************************************************
+				/////////////	END CREATING TEXT FIELDS FOR TABLE ///////////////////////
+				************************************************************************/
+
+
+
+
+
+				/***********************************************************************
+				///////////////////// BEGIN CREATING NEW FIELDS
+				***********************************************************************/
+				map<string, AIRealPoint>::iterator itNew;
+				for (itNew = newInfoCoordinates.begin(); itNew != newInfoCoordinates.end(); itNew++)
+				{
+					std::string newInfoHeader = itNew->first;
+					AIRealPoint newAnchor = itNew->second;
+
+
+					AIArtHandle newFrame;
+					SnpArtHelper artHelper;
+
+					// Get the group art that contains all the art in the current layer.
+					AIArtHandle artGroup = NULL;
+					result = sAIArt->GetFirstArtOfLayer(NULL, &artGroup);
+					aisdk::check_ai_error(result);
+
+					// Add the new point text item to the layer.
+					AITextOrientation orient = kHorizontalTextOrientation;
+
+					AIArtHandle textFrame = NULL;
+					result = sAITextFrame->NewPointText(kPlaceAboveAll, artGroup, orient, newAnchor, &textFrame);
+					aisdk::check_ai_error(result);
+
+
+					// Set the contents of the text range.
+					TextRangeRef range = NULL;
+					result = sAITextFrame->GetATETextRange(textFrame, &range);
+					aisdk::check_ai_error(result);
+					ITextRange crange(range);
+					string text = "";
+
+					if (variablesByNewInfo.find(newInfoHeader) != variablesByNewInfo.end())
+					{
+						text = variablesByNewInfo[newInfoHeader].value;
+					}
+					crange.SetLocalCharFeatures(features);
+					crange.InsertAfter(ai::UnicodeString(text).as_ASUnicode().c_str());
+				}
+				/***********************************************************************
+				///////////////////// END CREATING NEW FIELDS
+				***********************************************************************/
+
 
 			}
 			else
@@ -703,13 +871,11 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 						std::string contents;
 						contents.assign(vc.begin(), vc.begin() + strLength);
 						// To Curtis Mimes: And Here's where the modified text field content gets displayed (the contents variable).
-						
+
 						string prevVarValue = variablesByHeaders[rowIndex][colIndex].value;
 						if (contents != prevVarValue)
 						{
 							string variableName = variablesByHeaders[rowIndex][colIndex].name;
-							// contents.append(":- ");
-							// contents.append(variableName);
 							// sAIUser->MessageAlert(ai::UnicodeString(contents));
 							xmlTextVariables[variableName]->SetText(contents.c_str());
 						}
@@ -718,16 +884,16 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 
 			}
 		}
-		
+
 		tinyxml2::XMLPrinter streamer2;
 		doc->Print(&streamer2);
-		// sAIUser->MessageAlert(ai::UnicodeString(streamer2.CStr()));
-		MetaDataReaderWriter::sync(fullFilePath, streamer2.CStr());
+		sAIUser->MessageAlert(ai::UnicodeString(streamer2.CStr()));
+		// MetaDataReaderWriter::sync(fullFilePath, streamer2.CStr());
 	}
 	else if (strcmp(message->type, kAIDocumentNewNotifier) == 0)
 	{
 		int documentNew = 1;
-		
+
 	}
 
 	return error;
@@ -735,17 +901,17 @@ ASErr SnippetRunnerPlugin::Notify( AINotifierMessage *message )
 
 /*
 */
-ASErr SnippetRunnerPlugin::AddMenus( SPInterfaceMessage *message )
+ASErr SnippetRunnerPlugin::AddMenus(SPInterfaceMessage *message)
 {
 	ASErr error = kNoErr;
 
 	// Add About Plugins menu item for this plug-in.
 	SDKAboutPluginsHelper aboutPluginsHelper;
-	error = aboutPluginsHelper.AddAboutPluginsMenuItem(message, 
-				kSDKDefAboutSDKCompanyPluginsGroupName, 
-				ai::UnicodeString(kSDKDefAboutSDKCompanyPluginsGroupNameString), 
-				kSnippetRunnerPluginName "...", 
-				&fAboutPluginMenu);
+	error = aboutPluginsHelper.AddAboutPluginsMenuItem(message,
+		kSDKDefAboutSDKCompanyPluginsGroupName,
+		ai::UnicodeString(kSDKDefAboutSDKCompanyPluginsGroupNameString),
+		kSnippetRunnerPluginName "...",
+		&fAboutPluginMenu);
 	aisdk::check_ai_error(error);
 
 	// Add an SDK menu group to the Windows menu.
@@ -756,7 +922,7 @@ ASErr SnippetRunnerPlugin::AddMenus( SPInterfaceMessage *message )
 	if (!exists) {
 		AIPlatformAddMenuItemDataUS menuItemData;
 		menuItemData.groupName = kOtherPalettesMenuGroup;
-		menuItemData.itemText = ai::UnicodeString("SDK");	
+		menuItemData.itemText = ai::UnicodeString("SDK");
 		AIMenuItemHandle menuItemHandle = nil;
 		// error = sAIMenu->AddMenuItem(message->d.self, NULL, &menuItemData, kMenuItemNoOptions, &menuItemHandle);
 		// aisdk::check_ai_error(error);
@@ -764,7 +930,7 @@ ASErr SnippetRunnerPlugin::AddMenus( SPInterfaceMessage *message )
 		// error = sAIMenu->AddMenuGroupAsSubMenu(kSDKWindowsMenuGroup, kMenuGroupSortedAlphabeticallyOption, menuItemHandle, &menuGroup);
 		// aisdk::check_ai_error(error);
 	}
-	
+
 	// Add menu item for this plug-in under the company's about plug-ins menu group.
 	AIPlatformAddMenuItemDataUS showHidePanelMenuData;
 	showHidePanelMenuData.groupName = kSDKWindowsMenuGroup;
@@ -785,16 +951,16 @@ AIErr SnippetRunnerPlugin::MenuGroupExists(const char* targetGroupName, bool& gr
 	groupAlreadyMade = false;
 	ai::int32 count = 0;
 	AIMenuGroup dummyGroup = nil;
-	error = sAIMenu->CountMenuGroups( &count );
-	if ( error ) return error;
+	error = sAIMenu->CountMenuGroups(&count);
+	if (error) return error;
 	for (ai::int32 i = 0; i < count; i++)
 	{
-		error = sAIMenu->GetNthMenuGroup( i, &dummyGroup );
+		error = sAIMenu->GetNthMenuGroup(i, &dummyGroup);
 		aisdk::check_ai_error(error);
 		const char* name;
-		error = sAIMenu->GetMenuGroupName( dummyGroup, &name );
+		error = sAIMenu->GetMenuGroupName(dummyGroup, &name);
 		aisdk::check_ai_error(error);
-		if ( std::strcmp(name, targetGroupName ) == 0 )
+		if (std::strcmp(name, targetGroupName) == 0)
 		{
 			groupAlreadyMade = true;
 			break;
@@ -808,14 +974,14 @@ AIErr SnippetRunnerPlugin::MenuGroupExists(const char* targetGroupName, bool& gr
 ASErr SnippetRunnerPlugin::AcquirePostStartupSuites()
 {
 	ASErr error = kNoErr;
-	for ( int i = 0; gPostStartupSuites[i].name != nil; ++i ) {
-		if ( gPostStartupSuites[i].suite != nil ) {
-			ASErr tmperr = sSPBasic->AcquireSuite( gPostStartupSuites[i].name, 
-										gPostStartupSuites[i].version, 
-										(const void **) gPostStartupSuites[i].suite );
-			SDK_ASSERT_MSG_NOTHROW(!tmperr, 
-				aisdk::format_args("AcquireSuite failed for suite=%s version=%d", 
-					gPostStartupSuites[i].name, 
+	for (int i = 0; gPostStartupSuites[i].name != nil; ++i) {
+		if (gPostStartupSuites[i].suite != nil) {
+			ASErr tmperr = sSPBasic->AcquireSuite(gPostStartupSuites[i].name,
+				gPostStartupSuites[i].version,
+				(const void **)gPostStartupSuites[i].suite);
+			SDK_ASSERT_MSG_NOTHROW(!tmperr,
+				aisdk::format_args("AcquireSuite failed for suite=%s version=%d",
+					gPostStartupSuites[i].name,
 					gPostStartupSuites[i].version));
 			if (tmperr && !error) {
 				// A suite could not be acquired - note first error encountered for later return to caller then carry on.
@@ -832,15 +998,15 @@ ASErr SnippetRunnerPlugin::ReleasePostStartupSuites()
 {
 	ASErr error = kNoErr;
 
-	for ( int i = 0; gPostStartupSuites[i].name != nil; ++i ) {
-		if ( gPostStartupSuites[i].suite != nil ) {
-			void **s = (void **) gPostStartupSuites[i].suite;
+	for (int i = 0; gPostStartupSuites[i].name != nil; ++i) {
+		if (gPostStartupSuites[i].suite != nil) {
+			void **s = (void **)gPostStartupSuites[i].suite;
 			if (*s != nil) {
-				ASErr tmperr = sSPBasic->ReleaseSuite( gPostStartupSuites[i].name, gPostStartupSuites[i].version );
+				ASErr tmperr = sSPBasic->ReleaseSuite(gPostStartupSuites[i].name, gPostStartupSuites[i].version);
 				*s = nil;
-				SDK_ASSERT_MSG_NOTHROW(!tmperr, 
-					aisdk::format_args("ReleaseSuite failed for suite=%s version=%d", 
-						gPostStartupSuites[i].name, 
+				SDK_ASSERT_MSG_NOTHROW(!tmperr,
+					aisdk::format_args("ReleaseSuite failed for suite=%s version=%d",
+						gPostStartupSuites[i].name,
 						gPostStartupSuites[i].version));
 				if (tmperr && !error) {
 					// A suite could not be released - note first error encountered for later return to caller then carry on.
