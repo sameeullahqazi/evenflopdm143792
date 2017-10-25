@@ -43,12 +43,7 @@ using namespace PdmMetaDataTools;
 extern ImportSuite gPostStartupSuites[];
 
 SnippetRunnerPlugin*	gPlugin = NULL;
-std::map<string, map<string, AIArtHandle>>	textFrames;
-map < string, map<string, PDMVariable>> variablesByHeaders;
-map <string, PDMVariable> variablesByNewInfo;
 
-tinyxml2::XMLDocument* doc;
-std::map<string, tinyxml2::XMLElement*> xmlTextVariables;
 /*
 */
 Plugin* AllocatePlugin(SPPluginRef pluginRef)
@@ -311,6 +306,13 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 		iii.	Create col header strings
 		*/
 
+		std::map<string, map<string, AIArtHandle>>	textFrames;
+		map < string, map<string, PDMVariable>> variablesByHeaders;
+		map <string, PDMVariable> variablesByNewInfo;
+
+		tinyxml2::XMLDocument* doc;
+		std::map<string, tinyxml2::XMLElement*> xmlTextVariables;
+
 		map<string, TitleBlockHeaderInfo> headerInfoByVariables;
 		map<string, string> newInfoByVariables;
 
@@ -383,6 +385,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 		try
 		{
 			//	Fill these up with the required values above.
+			/*
 			static const char* xml =
 				"<success>true</success>"
 				"<debug>Filepath passed = C:\dev\desktopDev\lampros\evenfloPdm\aiFileSamples\Balance + _WideNeck_Eng_9oz_1pk_CTN_3049 - 423_10AUG2016_OUTLINES.ai&#x0A; No smart handler available.trying packet scanning.&#x0A; &#x0A; CreatorTool = Adobe Illustrator CS6(Windows)&#x0A; terminated successfully after reading values&#x0A; </debug>"
@@ -561,8 +564,8 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 				"<variable_value>#3FSNE3267</variable_value>"
 				"</pdm_variable>"
 				"</pdm_variable_list>";
-
-			// const char* xml = MetaDataReaderWriter::preCheckIn(fullFilePath).c_str();
+				*/
+			const char* xml = MetaDataReaderWriter::preCheckIn(fullFilePath).c_str();
 
 			/***********************************************************
 			//////////////////	BEGIN EXTRACTING VARIABLE CONTENT FROM THE XML CONTENT//////////////
@@ -672,7 +675,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 									vRowHeaders[contents] = anchor.v;
 								}
 							}
-
+							//
 							bool bNewInfoIndexPresent = variablesByNewInfo.find(contents) != variablesByNewInfo.end();
 							if (bNewInfoIndexPresent)
 							{
@@ -834,6 +837,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 	}
 	else if (strcmp(message->type, kAIDocumentSavedNotifier) == 0)
 	{
+		/*
 		// To Curtis Mimes: Here's where the Save event is triggered.
 		ASErr result = kNoErr;
 		const char* fullFilePath = filePath.GetFullPath().as_Platform().c_str();
@@ -844,51 +848,52 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 		map<string, map<string, AIArtHandle>>::iterator outerTextRangeIterator;
 		for (outerTextRangeIterator = textFrames.begin(); outerTextRangeIterator != textFrames.end(); outerTextRangeIterator++)
 		{
-			std::string rowIndex = outerTextRangeIterator->first;
-			map<string, AIArtHandle> outerTextRange = outerTextRangeIterator->second; // rowRectTop.top;
-			map<string, AIArtHandle>::iterator innerTextRangeIterator;
-			for (innerTextRangeIterator = outerTextRange.begin(); innerTextRangeIterator != outerTextRange.end(); innerTextRangeIterator++)
-			{
-				std::string colIndex = innerTextRangeIterator->first;
-				AIArtHandle textFrame = innerTextRangeIterator->second;
+		std::string rowIndex = outerTextRangeIterator->first;
+		map<string, AIArtHandle> outerTextRange = outerTextRangeIterator->second; // rowRectTop.top;
+		map<string, AIArtHandle>::iterator innerTextRangeIterator;
+		for (innerTextRangeIterator = outerTextRange.begin(); innerTextRangeIterator != outerTextRange.end(); innerTextRangeIterator++)
+		{
+		std::string colIndex = innerTextRangeIterator->first;
+		AIArtHandle textFrame = innerTextRangeIterator->second;
 
-				TextRangeRef range = NULL;
-				result = sAITextFrame->GetATETextRange(textFrame, &range);
-				aisdk::check_ai_error(result);
-				ITextRange textRange(range);
+		TextRangeRef range = NULL;
+		result = sAITextFrame->GetATETextRange(textFrame, &range);
+		aisdk::check_ai_error(result);
+		ITextRange textRange(range);
 
 
-				ai::AutoBuffer<ASUnicode> contents(textRange.GetSize());
-				textRange.GetContents(contents, textRange.GetSize());
-				// sAIUser->MessageAlert(ai::UnicodeString(contents));
-				ASInt32 strLength = textRange.GetSize();
-				if (strLength > 0)
-				{
-					std::vector<char> vc(strLength);
-					ASInt32 conLength = textRange.GetContents(&vc[0], strLength);
-					if (conLength == strLength)
-					{
-						std::string contents;
-						contents.assign(vc.begin(), vc.begin() + strLength);
-						// To Curtis Mimes: And Here's where the modified text field content gets displayed (the contents variable).
+		ai::AutoBuffer<ASUnicode> contents(textRange.GetSize());
+		textRange.GetContents(contents, textRange.GetSize());
+		// sAIUser->MessageAlert(ai::UnicodeString(contents));
+		ASInt32 strLength = textRange.GetSize();
+		if (strLength > 0)
+		{
+		std::vector<char> vc(strLength);
+		ASInt32 conLength = textRange.GetContents(&vc[0], strLength);
+		if (conLength == strLength)
+		{
+		std::string contents;
+		contents.assign(vc.begin(), vc.begin() + strLength);
+		// To Curtis Mimes: And Here's where the modified text field content gets displayed (the contents variable).
 
-						string prevVarValue = variablesByHeaders[rowIndex][colIndex].value;
-						if (contents != prevVarValue)
-						{
-							string variableName = variablesByHeaders[rowIndex][colIndex].name;
-							// sAIUser->MessageAlert(ai::UnicodeString(contents));
-							xmlTextVariables[variableName]->SetText(contents.c_str());
-						}
-					}
-				}
+		string prevVarValue = variablesByHeaders[rowIndex][colIndex].value;
+		if (contents != prevVarValue)
+		{
+		string variableName = variablesByHeaders[rowIndex][colIndex].name;
+		// sAIUser->MessageAlert(ai::UnicodeString(contents));
+		xmlTextVariables[variableName]->SetText(contents.c_str());
+		}
+		}
+		}
 
-			}
+		}
 		}
 
 		tinyxml2::XMLPrinter streamer2;
 		doc->Print(&streamer2);
 		sAIUser->MessageAlert(ai::UnicodeString(streamer2.CStr()));
 		// MetaDataReaderWriter::sync(fullFilePath, streamer2.CStr());
+		*/
 	}
 	else if (strcmp(message->type, kAIDocumentNewNotifier) == 0)
 	{
