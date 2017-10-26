@@ -387,184 +387,18 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 			//	Fill these up with the required values above.
 			/*
 			static const char* xml =
-				"<success>true</success>"
-				"<debug>Filepath passed = C:\dev\desktopDev\lampros\evenfloPdm\aiFileSamples\Balance + _WideNeck_Eng_9oz_1pk_CTN_3049 - 423_10AUG2016_OUTLINES.ai&#x0A; No smart handler available.trying packet scanning.&#x0A; &#x0A; CreatorTool = Adobe Illustrator CS6(Windows)&#x0A; terminated successfully after reading values&#x0A; </debug>"
-				"<message></message>"
-				"<pdm_variable_list>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MarketingAppReq</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MarketingApproval</variable_name>"
-				"<variable_value>Samee Qazi</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MarketingAppDate</variable_name>"
-				"<variable_value>17-09-2010</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MktgBrandAppReq</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MktgBrandApproval</variable_name>"
-				"<variable_value>Curtis Mimes</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MktgBrandAppDate</variable_name>"
-				"<variable_value>20-09-2016</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MarketingDirAppReq</variable_name>"
-				"<variable_value>0</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MarketingDirApproval</variable_name>"
-				"<variable_value>Troy Davis</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MarketingDirAppDate</variable_name>"
-				"<variable_value>23-10-2016</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:EngineeringAppReq</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:EngineeringApproval</variable_name>"
-				"<variable_value>Troy Davis</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:EngAppDate</variable_name>"
-				"<variable_value>12-09-2015</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:OperationsDirAppReq</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:OperationsDirApproval</variable_name>"
-				"<variable_value>Troy Davis</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:OperationsDirAppDate</variable_name>"
-				"<variable_value>12-09-2015</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:QAAppReq</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:QAApproval</variable_name>"
-				"<variable_value>Troy Davis</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:QAAppDate</variable_name>"
-				"<variable_value>12-09-2015</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:QADirAppReq</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:QADirApproval</variable_name>"
-				"<variable_value>Troy Davis</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:QADirAppDate</variable_name>"
-				"<variable_value>12-09-2015</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:LegalAppReq</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:LegalApproval</variable_name>"
-				"<variable_value>Troy Davis</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:LegalAppDate</variable_name>"
-				"<variable_value>12-09-2015</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MexicoAppReq</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MexicoApproval</variable_name>"
-				"<variable_value>Troy Davis</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:MexicoAppDate</variable_name>"
-				"<variable_value>12-09-2015</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:DrawnDate</variable_name>"
-				"<variable_value>11-06-2015</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:DrawnBy</variable_name>"
-				"<variable_value>Muzna Roghay</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:SpecNo</variable_name>"
-				"<variable_value>123</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:SpecNo</variable_name>"
-				"<variable_value>123</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:LegacySpecNo</variable_name>"
-				"<variable_value>12323</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:Revision</variable_name>"
-				"<variable_value>123232</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:ECNumber</variable_name>"
-				"<variable_value>123123534</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:Description</variable_name>"
-				"<variable_value>Some description</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:Project</variable_name>"
-				"<variable_value>New project</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:Project Description</variable_name>"
-				"<variable_value>New project desc. New project desc.</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:ArtworkType</variable_name>"
-				"<variable_value>AT</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:Dieline</variable_name>"
-				"<variable_value>Drawing Line</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:Material</variable_name>"
-				"<variable_value>Copper</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:ToolingApproved</variable_name>"
-				"<variable_value>1</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:TemplateNo</variable_name>"
-				"<variable_value>9876934</variable_value>"
-				"</pdm_variable>"
-				"<pdm_variable>"
-				"<variable_name>xmp:TemplateRev</variable_name>"
-				"<variable_value>#3FSNE3267</variable_value>"
-				"</pdm_variable>"
-				"</pdm_variable_list>";
-				*/
+			"<root><success>true</success>"
+			"<debug>Filepath passed = C:\dev\desktopDev\lampros\evenfloPdm\aiConnectorDllTest\aiConnectorDllTest\bin\Debug\./example.ai&#x0A;No smart handler available. trying packet scanning.&#x0A;&#x0A;CreatorTool = Adobe Illustrator CC 2017 (Windows)&#x0A;terminated successfully after reading values&#x0A;</debug>"
+			"<message></message>"
+			"<pdm_variable_list>"
+			"<pdm_variable>"
+			"<variable_name>dc:title</variable_name>"
+			"<variable_value></variable_value>"
+			"</pdm_variable>"
+			"</pdm_variable_list>"
+			"</root>";
+			*/
+
 			const char* xml = MetaDataReaderWriter::preCheckIn(fullFilePath).c_str();
 
 			/***********************************************************
@@ -572,16 +406,31 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 			***********************************************************/
 			doc = new tinyxml2::XMLDocument();
 			doc->Parse(xml);
-
-			tinyxml2::XMLElement* pdm_variable = doc->FirstChildElement("pdm_variable_list")->FirstChildElement("pdm_variable");
+			// doc->LoadFile("xml.css");
+			tinyxml2::XMLNode* root = doc->FirstChild();
+			tinyxml2::XMLElement* pdm_variable = root->FirstChildElement("pdm_variable_list")->FirstChildElement("pdm_variable");
 			if (pdm_variable)
 			{
 				do
 				{
 					tinyxml2::XMLElement* variable_name = pdm_variable->FirstChildElement("variable_name");
 					tinyxml2::XMLElement* variable_value = pdm_variable->FirstChildElement("variable_value");
-					string var_name = variable_name->GetText();
-					string var_value = variable_value->GetText();
+
+					tinyxml2::XMLNode* textNodeVarName = variable_name->FirstChild();
+					string var_name = "";
+					if (textNodeVarName)
+					{
+						tinyxml2::XMLText* xmlTextVarName = textNodeVarName->ToText();
+						var_name = xmlTextVarName->Value();
+					}
+
+					tinyxml2::XMLNode* textNodeVarValue = variable_value->FirstChild();
+					string var_value = "";
+					if (textNodeVarValue)
+					{
+						tinyxml2::XMLText* xmlTextVarValue = textNodeVarValue->ToText();
+						var_value = xmlTextVarValue->Value();
+					}
 
 					if (headerInfoByVariables.find(var_name) != headerInfoByVariables.end())
 					{
@@ -606,9 +455,11 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 
 				} while (pdm_variable);
 			}
+
 			//////////////////	END EXTRACTING VARIABLE CONTENT FROM THE XML CONTENT//////////////
 
-			//
+			// Destroy the XMLDoc now that it is no longer needed
+			doc->~XMLDocument();
 			AIRealMatrix headerMatrix;
 
 			AIArtHandle artGroup = NULL;
