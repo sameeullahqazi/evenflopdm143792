@@ -406,6 +406,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 			***********************************************************/
 			doc = new tinyxml2::XMLDocument();
 			doc->Parse(xml);
+			sAIUser->MessageAlert(ai::UnicodeString("XML parsed and loaded"));
 			// doc->LoadFile("xml.css");
 			tinyxml2::XMLNode* root = doc->FirstChild();
 			tinyxml2::XMLElement* pdm_variable = root->FirstChildElement("pdm_variable_list")->FirstChildElement("pdm_variable");
@@ -432,25 +433,28 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 						var_value = xmlTextVarValue->Value();
 					}
 
-					if (headerInfoByVariables.find(var_name) != headerInfoByVariables.end())
+					if (var_name.length() > 0)
 					{
-						string rowHeader = headerInfoByVariables[var_name].row;
-						string columnHeader = headerInfoByVariables[var_name].column;
-						variablesByHeaders[rowHeader][columnHeader] = { var_name, var_value };
-						vRowHeaders[rowHeader] = 0.0;
-						hColHeaders[columnHeader] = 0.0;
+						if (headerInfoByVariables.find(var_name) != headerInfoByVariables.end())
+						{
+							string rowHeader = headerInfoByVariables[var_name].row;
+							string columnHeader = headerInfoByVariables[var_name].column;
+							variablesByHeaders[rowHeader][columnHeader] = { var_name, var_value };
+							vRowHeaders[rowHeader] = 0.0;
+							hColHeaders[columnHeader] = 0.0;
 
-						xmlTextVariables[var_name] = variable_value;
+							xmlTextVariables[var_name] = variable_value;
+						}
+
+						if (newInfoByVariables.find(var_name) != newInfoByVariables.end())
+						{
+							string tmpHeader = newInfoByVariables[var_name];
+							variablesByNewInfo[tmpHeader] = { var_name, var_value };
+							xmlTextVariables[var_name] = variable_value;
+							newInfoCoordinates[tmpHeader] = { 0.0, 0.0 };
+						}
 					}
-
-					if (newInfoByVariables.find(var_name) != newInfoByVariables.end())
-					{
-						string tmpHeader = newInfoByVariables[var_name];
-						variablesByNewInfo[tmpHeader] = { var_name, var_value };
-						xmlTextVariables[var_name] = variable_value;
-						newInfoCoordinates[tmpHeader] = { 0.0, 0.0 };
-					}
-
+					sAIUser->MessageAlert(ai::UnicodeString(var_name));
 					pdm_variable = pdm_variable->NextSiblingElement();
 
 				} while (pdm_variable);
@@ -458,8 +462,11 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 
 			//////////////////	END EXTRACTING VARIABLE CONTENT FROM THE XML CONTENT//////////////
 
+			sAIUser->MessageAlert(ai::UnicodeString("About to call the ~XMLDocument() destructor. Let's see if it crashes...."));
 			// Destroy the XMLDoc now that it is no longer needed
 			doc->~XMLDocument();
+			sAIUser->MessageAlert(ai::UnicodeString("No it didn't crash. So it wasn't the desctructor."));
+
 			AIRealMatrix headerMatrix;
 
 			AIArtHandle artGroup = NULL;
@@ -545,7 +552,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 					}
 
 				}
-
+				sAIUser->MessageAlert(ai::UnicodeString("Till this point, the entire .ai file has been iterated for matching keywords."));
 				//////////////////	END ITERATING THE ENTIRE TEXT OF THE .AI FILE//////////////
 
 
@@ -617,6 +624,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 				/**********************************************************************
 				/////////////	END CREATING TEXT FIELDS FOR TABLE ///////////////////////
 				************************************************************************/
+				sAIUser->MessageAlert(ai::UnicodeString("And to this point, all tabular text fields have been created for the table."));
 
 
 
@@ -665,6 +673,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 				/***********************************************************************
 				///////////////////// END CREATING NEW FIELDS
 				***********************************************************************/
+				sAIUser->MessageAlert(ai::UnicodeString("And finally to this point, all non tabular (other) text fields have been created for the table."));
 
 
 			}
