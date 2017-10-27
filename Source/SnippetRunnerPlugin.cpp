@@ -387,85 +387,168 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 			//	Fill these up with the required values above.
 			/*
 			static const char* xml =
-			"<root><success>true</success>"
-			"<debug>Filepath passed = C:\dev\desktopDev\lampros\evenfloPdm\aiConnectorDllTest\aiConnectorDllTest\bin\Debug\./example.ai&#x0A;No smart handler available. trying packet scanning.&#x0A;&#x0A;CreatorTool = Adobe Illustrator CC 2017 (Windows)&#x0A;terminated successfully after reading values&#x0A;</debug>"
-			"<message></message>"
-			"<pdm_variable_list>"
-			"<pdm_variable>"
-			"<variable_name>dc:title</variable_name>"
-			"<variable_value></variable_value>"
-			"</pdm_variable>"
-			"</pdm_variable_list>"
-			"</root>";
+
+				"<debug>Filepath passed = C:\dev\desktopDev\lampros\evenfloPdm\aiConnectorDllTest\aiConnectorDllTest\bin\Debug\./example.ai&#x0A;No smart handler available. trying packet scanning.&#x0A;&#x0A;CreatorTool = Adobe Illustrator CC 2017 (Windows)&#x0A;terminated successfully after reading values&#x0A;</debug>"
+				"<message></message>"
+				"<pdm_variable_list>"
+				"<pdm_variable>"
+				"<variable_name>dc:title</variable_name>"
+				"<variable_value></variable_value>"
+				"</pdm_variable>"
+				"</pdm_variable_list>";
 			*/
 
-			const char* xml = MetaDataReaderWriter::preCheckIn(fullFilePath).c_str();
+
+			// const char* xml = MetaDataReaderWriter::preCheckIn(fullFilePath).c_str();
+			
+			//int fileNumber = MetaDataReaderWriter
+			
+			string tempEnv = string(getenv("TEMP")) + "\\";
+			string tempFileName = tempEnv + to_string(fileNumber);
+
+			ifstream inFile;
+			inFile.open(tempFileName);//open the input file
+			stringstream strStream;
+			strStream << inFile.rdbuf();//read the file
+			char* xml = strStream.str().c_str();//xml holds the content of the file
+			
 
 			/***********************************************************
 			//////////////////	BEGIN EXTRACTING VARIABLE CONTENT FROM THE XML CONTENT//////////////
 			***********************************************************/
 			doc = new tinyxml2::XMLDocument();
 			doc->Parse(xml);
-			sAIUser->MessageAlert(ai::UnicodeString("XML parsed and loaded"));
-			// doc->LoadFile("xml.css");
-			tinyxml2::XMLNode* root = doc->FirstChild();
-			tinyxml2::XMLElement* pdm_variable = root->FirstChildElement("pdm_variable_list")->FirstChildElement("pdm_variable");
+
+			// doc->LoadFile("return_std__string_checkin_result.xml"); //  xml.css");
+
+			char* resultTempFileName = "C:\\temp\\savedXMLDoc.xml"; // string(getenv("TEMP")) + "\\" + string("savedXMLDoc.xml");
+			//output result to file
+			ofstream outFile;
+			outFile.open(resultTempFileName);
+			outFile << xml;
+			outFile.close();
+
+
+			// tinyxml2::XMLElement* pdm_variable_list = doc->NextSiblingElement()->NextSiblingElement()->NextSiblingElement();
+			tinyxml2::XMLElement* pdm_variable_list = doc->FirstChildElement("root")->FirstChildElement("pdm_variable_list");
+			if (pdm_variable_list)
+				sAIUser->MessageAlert(ai::UnicodeString("pdm_variable_list node obtained successfully"));
+			else
+				sAIUser->MessageAlert(ai::UnicodeString("pdm_variable_list contains a NULL; it wasn't obtained."));
+
+			for (tinyxml2::XMLElement* pdm_variable = pdm_variable_list->FirstChildElement("pdm_variable"); pdm_variable != NULL; pdm_variable = pdm_variable->NextSiblingElement())
+			{
+				if (!pdm_variable)
+				{
+					sAIUser->MessageAlert(ai::UnicodeString("This pdm_variable element contains a null. it wasn't obtained."));
+				}
+
+				tinyxml2::XMLElement* variable_name = pdm_variable->FirstChildElement("variable_name");
+				tinyxml2::XMLElement* variable_value = pdm_variable->FirstChildElement("variable_value");
+
+				tinyxml2::XMLNode* textNodeVarName = variable_name->FirstChild();
+				string var_name = "";
+				if (textNodeVarName)
+				{
+					tinyxml2::XMLText* xmlTextVarName = textNodeVarName->ToText();
+					var_name = xmlTextVarName->Value();
+				}
+
+				tinyxml2::XMLNode* textNodeVarValue = variable_value->FirstChild();
+				string var_value = "";
+				if (textNodeVarValue)
+				{
+					tinyxml2::XMLText* xmlTextVarValue = textNodeVarValue->ToText();
+					var_value = xmlTextVarValue->Value();
+				}
+
+				if (var_name.length() > 0)
+				{
+					if (headerInfoByVariables.find(var_name) != headerInfoByVariables.end())
+					{
+						string rowHeader = headerInfoByVariables[var_name].row;
+						string columnHeader = headerInfoByVariables[var_name].column;
+						variablesByHeaders[rowHeader][columnHeader] = { var_name, var_value };
+						vRowHeaders[rowHeader] = 0.0;
+						hColHeaders[columnHeader] = 0.0;
+
+						xmlTextVariables[var_name] = variable_value;
+					}
+
+					if (newInfoByVariables.find(var_name) != newInfoByVariables.end())
+					{
+						string tmpHeader = newInfoByVariables[var_name];
+						variablesByNewInfo[tmpHeader] = { var_name, var_value };
+						xmlTextVariables[var_name] = variable_value;
+						newInfoCoordinates[tmpHeader] = { 0.0, 0.0 };
+					}
+				}
+				// sAIUser->MessageAlert(ai::UnicodeString(var_name));
+
+			}
+
+
+
+			/*
+			tinyxml2::XMLElement* pdm_variable = pdm_variable_list->FirstChildElement("pdm_variable");
+			sAIUser->MessageAlert(ai::UnicodeString("PDM Variable list obtained successfully"));
 			if (pdm_variable)
 			{
-				do
-				{
-					tinyxml2::XMLElement* variable_name = pdm_variable->FirstChildElement("variable_name");
-					tinyxml2::XMLElement* variable_value = pdm_variable->FirstChildElement("variable_value");
+			do
+			{
+			tinyxml2::XMLElement* variable_name = pdm_variable->FirstChildElement("variable_name");
+			tinyxml2::XMLElement* variable_value = pdm_variable->FirstChildElement("variable_value");
 
-					tinyxml2::XMLNode* textNodeVarName = variable_name->FirstChild();
-					string var_name = "";
-					if (textNodeVarName)
-					{
-						tinyxml2::XMLText* xmlTextVarName = textNodeVarName->ToText();
-						var_name = xmlTextVarName->Value();
-					}
-
-					tinyxml2::XMLNode* textNodeVarValue = variable_value->FirstChild();
-					string var_value = "";
-					if (textNodeVarValue)
-					{
-						tinyxml2::XMLText* xmlTextVarValue = textNodeVarValue->ToText();
-						var_value = xmlTextVarValue->Value();
-					}
-
-					if (var_name.length() > 0)
-					{
-						if (headerInfoByVariables.find(var_name) != headerInfoByVariables.end())
-						{
-							string rowHeader = headerInfoByVariables[var_name].row;
-							string columnHeader = headerInfoByVariables[var_name].column;
-							variablesByHeaders[rowHeader][columnHeader] = { var_name, var_value };
-							vRowHeaders[rowHeader] = 0.0;
-							hColHeaders[columnHeader] = 0.0;
-
-							xmlTextVariables[var_name] = variable_value;
-						}
-
-						if (newInfoByVariables.find(var_name) != newInfoByVariables.end())
-						{
-							string tmpHeader = newInfoByVariables[var_name];
-							variablesByNewInfo[tmpHeader] = { var_name, var_value };
-							xmlTextVariables[var_name] = variable_value;
-							newInfoCoordinates[tmpHeader] = { 0.0, 0.0 };
-						}
-					}
-					sAIUser->MessageAlert(ai::UnicodeString(var_name));
-					pdm_variable = pdm_variable->NextSiblingElement();
-
-				} while (pdm_variable);
+			tinyxml2::XMLNode* textNodeVarName = variable_name->FirstChild();
+			string var_name = "";
+			if (textNodeVarName)
+			{
+			tinyxml2::XMLText* xmlTextVarName = textNodeVarName->ToText();
+			var_name = xmlTextVarName->Value();
 			}
+
+			tinyxml2::XMLNode* textNodeVarValue = variable_value->FirstChild();
+			string var_value = "";
+			if (textNodeVarValue)
+			{
+			tinyxml2::XMLText* xmlTextVarValue = textNodeVarValue->ToText();
+			var_value = xmlTextVarValue->Value();
+			}
+
+			if (var_name.length() > 0)
+			{
+			if (headerInfoByVariables.find(var_name) != headerInfoByVariables.end())
+			{
+			string rowHeader = headerInfoByVariables[var_name].row;
+			string columnHeader = headerInfoByVariables[var_name].column;
+			variablesByHeaders[rowHeader][columnHeader] = { var_name, var_value };
+			vRowHeaders[rowHeader] = 0.0;
+			hColHeaders[columnHeader] = 0.0;
+
+			xmlTextVariables[var_name] = variable_value;
+			}
+
+			if (newInfoByVariables.find(var_name) != newInfoByVariables.end())
+			{
+			string tmpHeader = newInfoByVariables[var_name];
+			variablesByNewInfo[tmpHeader] = { var_name, var_value };
+			xmlTextVariables[var_name] = variable_value;
+			newInfoCoordinates[tmpHeader] = { 0.0, 0.0 };
+			}
+			}
+			// sAIUser->MessageAlert(ai::UnicodeString(var_name));
+			pdm_variable = pdm_variable->NextSiblingElement();
+
+			} while (pdm_variable);
+			}
+			*/
 
 			//////////////////	END EXTRACTING VARIABLE CONTENT FROM THE XML CONTENT//////////////
 
-			sAIUser->MessageAlert(ai::UnicodeString("About to call the ~XMLDocument() destructor. Let's see if it crashes...."));
+			// sAIUser->MessageAlert(ai::UnicodeString("About to call the ~XMLDocument() destructor. Let's see if it crashes...."));
 			// Destroy the XMLDoc now that it is no longer needed
 			doc->~XMLDocument();
-			sAIUser->MessageAlert(ai::UnicodeString("No it didn't crash. So it wasn't the desctructor."));
+			// sAIUser->MessageAlert(ai::UnicodeString("No it didn't crash. So it wasn't the desctructor."));
 
 			AIRealMatrix headerMatrix;
 
@@ -552,7 +635,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 					}
 
 				}
-				sAIUser->MessageAlert(ai::UnicodeString("Till this point, the entire .ai file has been iterated for matching keywords."));
+				// sAIUser->MessageAlert(ai::UnicodeString("Till this point, the entire .ai file has been iterated for matching keywords."));
 				//////////////////	END ITERATING THE ENTIRE TEXT OF THE .AI FILE//////////////
 
 
@@ -624,7 +707,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 				/**********************************************************************
 				/////////////	END CREATING TEXT FIELDS FOR TABLE ///////////////////////
 				************************************************************************/
-				sAIUser->MessageAlert(ai::UnicodeString("And to this point, all tabular text fields have been created for the table."));
+				// sAIUser->MessageAlert(ai::UnicodeString("And to this point, all tabular text fields have been created for the table."));
 
 
 
@@ -673,7 +756,7 @@ ASErr SnippetRunnerPlugin::Notify(AINotifierMessage *message)
 				/***********************************************************************
 				///////////////////// END CREATING NEW FIELDS
 				***********************************************************************/
-				sAIUser->MessageAlert(ai::UnicodeString("And finally to this point, all non tabular (other) text fields have been created for the table."));
+				// sAIUser->MessageAlert(ai::UnicodeString("And finally to this point, all non tabular (other) text fields have been created for the table."));
 
 
 			}
