@@ -106,7 +106,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\CodeSnippets;.\Source;.\Resources;..\common\includes;..\..\illustratorapi\adm;..\..\illustratorapi\ate;..\..\illustratorapi\illustrator;..\..\illustratorapi\illustrator\actions;..\..\illustratorapi\pica_sp;..\..\illustratorapi\illustrator\legacy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\CodeSnippets;.\Source;.\Resources;..\common\includes;..\..\illustratorapi\adm;..\..\illustratorapi\ate;..\..\illustratorapi\illustrator;..\..\illustratorapi\illustrator\actions;..\..\illustratorapi\pica_sp;..\..\illustratorapi\illustrator\legacy;E:\Downloads\CurtisMimes\PdmMetaDataTools;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;_DEBUG;WIN32;_WINDOWS;WIN_ENV;WINNT_ENV;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;ADM_FREE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <StructMemberAlignment>8Bytes</StructMemberAlignment>
@@ -147,6 +147,8 @@
       <ImportLibrary>./SnippetRunner.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
       <LargeAddressAware>true</LargeAddressAware>
+      <AdditionalLibraryDirectories>E:\Downloads\CurtisMimes\consoleDllTest;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;PdmMetaDataTools.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -161,7 +163,7 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\CodeSnippets;.\Source;.\Resources;..\common\includes;..\..\illustratorapi\adm;..\..\illustratorapi\ate;..\..\illustratorapi\illustrator;..\..\illustratorapi\illustrator\actions;..\..\illustratorapi\pica_sp;..\..\illustratorapi\illustrator\legacy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\CodeSnippets;.\Source;.\Resources;..\common\includes;..\..\illustratorapi\adm;..\..\illustratorapi\ate;..\..\illustratorapi\illustrator;..\..\illustratorapi\illustrator\actions;..\..\illustratorapi\pica_sp;..\..\illustratorapi\illustrator\legacy;C:\dev\desktopDev\lampros\evenfloPDM\PdmMetaDataTools\PdmMetaDataTools;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DEBUG;_DEBUG;_WINDOWS;WIN_ENV;WINNT_ENV;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <StructMemberAlignment>8Bytes</StructMemberAlignment>
@@ -202,6 +204,8 @@
       <ImportLibrary>./SnippetRunner.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
       <LargeAddressAware>true</LargeAddressAware>
+      <AdditionalLibraryDirectories>C:\dev\desktopDev\lampros\evenfloPDM\PdmMetaDataTools\x64\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;PdmMetaDataTools.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -497,6 +501,7 @@
     <ClCompile Include="..\CodeSnippets\SnpTextStyles.cpp" />
     <ClCompile Include="..\CodeSnippets\SnpUnitTestHelper.cpp" />
     <ClCompile Include="..\CodeSnippets\SnpXML.cpp" />
+    <ClCompile Include="Source\tinyxml2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\CodeSnippets\SnpPatternHelper.h" />
@@ -528,6 +533,8 @@
     <ClInclude Include="..\CodeSnippets\SnpSelectionHelper.h" />
     <ClInclude Include="..\CodeSnippets\SnpSymbolHelper.h" />
     <ClInclude Include="..\CodeSnippets\SnpUnitTestHelper.h" />
+    <ClInclude Include="Source\stdafx.h" />
+    <ClInclude Include="Source\tinyxml2.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources\Win\SnippetRunner.rc" />
